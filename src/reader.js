@@ -92,6 +92,7 @@ function read_string(string) {
 	// Numbers.
 	match = match_number(string);
 	if (match) {
+		match.result = parseFloat(match.result);
 		return match;
 	}
 
@@ -125,3 +126,11 @@ function read_string(string) {
 	throw "Can't parse: " + string;
 }
 exports.read_string = read_string;
+
+var read = function (string) {
+	var form = read_string(string);
+	if (typeof(form) !== 'undefined') {
+		return form.result;
+	}
+};
+exports.read = read;
