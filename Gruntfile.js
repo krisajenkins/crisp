@@ -11,13 +11,22 @@ module.exports = function(grunt) {
 				src: 'src/<%= pkg.name %>.js',
 				dest: 'build/<%= pkg.name %>.min.js'
 			}
+		},
+		cafemocha: {
+			tests: {
+				src: 'test/**/*.js',
+				require: [
+					'should'
+				]
+			}
 		}
 	});
 
 	// Load the plugin that provides the "uglify" task.
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-cafe-mocha');
 
 	// Default task(s).
-	grunt.registerTask('default', ['uglify']);
-
+	grunt.registerTask('default', ['cafemocha', 'uglify']);
+	grunt.registerTask('uglify', ['uglify']);
 };
