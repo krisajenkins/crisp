@@ -10,6 +10,7 @@ describe('reader', function () {
 	it('Simple', function () {
 		assert.equal(read_string("2").result, 2);
 		assert.equal(read_string("2").result, 2);
+		assert.equal(read_string("-9").result, -9);
 		assert.equal(read_string("51.13").result, 51.13);
 		assert.deepEqual(read_string("somevar").result, new Symbol("somevar"));
 		assert.deepEqual(read_string("+").result, new Symbol("+"));

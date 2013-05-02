@@ -2,6 +2,8 @@
 
 var assert = require('assert');
 var Symbol = require('./runtime').Symbol;
+var Keyword = require('./runtime').Keyword;
+var Environment = require('./runtime').Environment;
 var equal = require('./runtime').equal;
 var read = require('./reader').read;
 
@@ -15,42 +17,94 @@ var is_self_evaluating = function (form) {
 		typeof(form) === "string";
 };
 
-var analyze = function (form) {
-	console.log("FORM", form, typeof(form));
-	if (is_atom(form)) {
-		console.log("ATOM", form);
-		if (is_self_evaluating(form)) {
-			console.log("SELF", form);
-			return function (env) {
-				return form;
-			};
-		}
-	} else {
-		console.log("LIST", form);
-		if (equal(form[0], new Symbol("quote"))) {
-			assert.equal(form.length, 2, "Invalid quote form: " + form);
-			return function (env) {
-				return form[1];
-			};
-		}
-	}
-
-	throw "Unhandled form: " + form;
+var analyze_self_evaluating = function (form) {
+	return function (env) {
+		return form;
+	};
 };
 
-var base_environment = {};
-var global_environment = {};
-global_environment.prototype = base_environment;
+var analyze_symbol = function (form) {
+	return function (env) {
+		return env[form.name];
+	};
+};
+
+var analyze_quote = function (form) {
+	assert.equal(form.length, 2, "Invalid quote form: " + form);
+	return function (env) {
+		return form[1];
+	};
+};
+
+var analyze_if = function (form) {
+	assert.equal(true, 3 <= form.length <= 4, "Invalid if form: " + form);
+	var analyzed_test, analyzed_then, analyzed_else;
+
+	if (form.length === 3) {
+		form.push(new Symbol("nil"));
+	}
+
+	analyzed_test = analyze(form[1]);
+	analyzed_then = analyze(form[2]);
+	analyzed_else = analyze(form[3]);
+
+	return function (env) {
+		if (analyzed_test(env)) {
+			return analyzed_then(env);
+		}
+		return analyzed_else(env);
+	};
+};
+
+var analyze_apply = function (form) {
+	var head = form.shift(),
+		tail = form;
+	assert.equal(true, head instanceof Symbol, "Head of form is not a Symbol: ", head);
+	return function (env) {
+		var f = env[head.name];
+		if (typeof(f) === 'undefined') {
+			throw "Symbol not found: " + head;
+		}
+		return f.apply(env, tail);
+	};
+};
+
+var analyze = function (form) {
+	if (is_atom(form)) {
+		if (is_self_evaluating(form)) {
+			return analyze_self_evaluating(form);
+		}
+
+		if (form instanceof Symbol) {
+			return analyze_symbol(form);
+		}
+	} else {
+		if (equal(form[0], new Symbol("quote"))) {
+			return analyze_quote(form);
+		}
+
+		if (equal(form[0], new Symbol("if"))) {
+			return analyze_if(form);
+		}
+
+		return analyze_apply(form);
+	}
+
+	throw "Unhandled form: " + form[0];
+};
+
+var env = new Environment();
 
 var evaluate = function (string) {
-	var form, analysis, result;
+	var form, analyzed, result;
 
+	// console.log("STRING", string);
 	form = read(string);
-	console.log("FORM", form);
-	analysis = analyze(form);
-	console.log("ANALYSIS", analysis);
-	result = analysis(global_environment);
-	console.log("RESULT", result);
+	// console.log("FORM", form);
+	analyzed = analyze(form);
+	// console.log("ANALYSIS", analyzed);
+	result = analyzed(env);
+	// console.log("RESULT", result, typeof(result));
 
 	return result;
 };
