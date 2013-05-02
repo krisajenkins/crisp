@@ -56,6 +56,16 @@ var analyze_if = function (form) {
 	};
 };
 
+var analyze_def = function (form) {
+	assert.equal(3, form.length, "Invalid def form: " + form);
+	var symbol = form[1],
+		analyzed_body = analyze(form[2]);
+
+	return function (env) {
+		env[symbol.name] = analyzed_body(env);
+	};
+}
+
 var analyze_apply = function (form) {
 	var head = form.shift(),
 		tail = form;
@@ -63,7 +73,7 @@ var analyze_apply = function (form) {
 	return function (env) {
 		var f = env[head.name];
 		if (typeof(f) === 'undefined') {
-			throw "Symbol not found: " + head;
+			throw "Unknown function: " + head.name;
 		}
 		return f.apply(env, tail);
 	};
@@ -85,6 +95,10 @@ var analyze = function (form) {
 
 		if (equal(form[0], new Symbol("if"))) {
 			return analyze_if(form);
+		}
+
+		if (equal(form[0], new Symbol("def"))) {
+			return analyze_def(form);
 		}
 
 		return analyze_apply(form);

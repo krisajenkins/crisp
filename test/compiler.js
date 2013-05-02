@@ -50,4 +50,14 @@ describe('compiler', function () {
 		assert.equal(evaluate("(if (= 2 2) (+ 1 2) (- 5 1))", env), 3);
 		assert.equal(evaluate("(if (= 1 2) (+ 1 2) (- 5 1))", env), 4);
 	});
+	it('def', function () {
+		evaluate("(def foo 5)", env);
+		evaluate('(def bar "test")', env);
+		evaluate('(def who foo)', env);
+		evaluate('(def pah (+ 3 5))', env);
+		assert.equal(evaluate("foo", env), 5);
+		assert.equal(evaluate("bar", env), "test");
+		assert.equal(evaluate("who", env), 5);
+		assert.equal(evaluate("pah", env), 8);
+	});
 });
