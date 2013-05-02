@@ -17,26 +17,58 @@ var is_self_evaluating = function (form) {
 		typeof(form) === "string";
 };
 
-var analyze_self_evaluating = function (form) {
+var analyze = function (form) {
+	if (is_atom(form)) {
+		if (is_self_evaluating(form)) {
+			return analyze.self_evaluating(form);
+		}
+
+		if (form instanceof Symbol) {
+			return analyze.symbol(form);
+		}
+	} else {
+		if (equal(form[0], new Symbol("quote"))) {
+			return analyze.quote(form);
+		}
+
+		if (equal(form[0], new Symbol("if"))) {
+			return analyze.if(form);
+		}
+
+		if (equal(form[0], new Symbol("def"))) {
+			return analyze.def(form);
+		}
+
+		if (equal(form[0], new Symbol("fn"))) {
+			return analyze.lambda(form);
+		}
+
+		return analyze.primitive(form);
+	}
+
+	throw "Unhandled form: " + form[0];
+};
+
+analyze.self_evaluating = function (form) {
 	return function (env) {
 		return form;
 	};
 };
 
-var analyze_symbol = function (form) {
+analyze.symbol = function (form) {
 	return function (env) {
 		return env[form];
 	};
 };
 
-var analyze_quote = function (form) {
+analyze.quote = function (form) {
 	assert.equal(form.length, 2, "Invalid quote form: " + form);
 	return function (env) {
 		return form[1];
 	};
 };
 
-var analyze_if = function (form) {
+analyze.if = function (form) {
 	assert.equal(true, 3 <= form.length <= 4, "Invalid if form: " + form);
 	var analyzed_test, analyzed_then, analyzed_else;
 
@@ -56,7 +88,7 @@ var analyze_if = function (form) {
 	};
 };
 
-var analyze_def = function (form) {
+analyze.def = function (form) {
 	assert.equal(3, form.length, "Invalid def form: " + form);
 	var symbol = form[1],
 		analyzed_body = analyze(form[2]);
@@ -76,7 +108,7 @@ Lambda.prototype.toString = function () {
 	return "[ Lambda ]";
 };
 
-var analyze_lambda = function (form) {
+analyze.lambda = function (form) {
 	assert.equal(3, form.length, "Invalid fn form: " + form);
 	var args = form[1],
 		body = form[2],
@@ -88,7 +120,7 @@ var analyze_lambda = function (form) {
 	};
 };
 
-var analyze_primitive = function (form) {
+analyze.primitive = function (form) {
 	var fn_name = form.shift(),
 		analyzed_fn = analyze(fn_name),
 		analyzed_args = form.map(analyze);
@@ -119,38 +151,6 @@ var analyze_primitive = function (form) {
 			throw new Error("Failed to apply function: " + fn_name);
 		}
 	};
-};
-
-var analyze = function (form) {
-	if (is_atom(form)) {
-		if (is_self_evaluating(form)) {
-			return analyze_self_evaluating(form);
-		}
-
-		if (form instanceof Symbol) {
-			return analyze_symbol(form);
-		}
-	} else {
-		if (equal(form[0], new Symbol("quote"))) {
-			return analyze_quote(form);
-		}
-
-		if (equal(form[0], new Symbol("if"))) {
-			return analyze_if(form);
-		}
-
-		if (equal(form[0], new Symbol("def"))) {
-			return analyze_def(form);
-		}
-
-		if (equal(form[0], new Symbol("fn"))) {
-			return analyze_lambda(form);
-		}
-
-		return analyze_primitive(form);
-	}
-
-	throw "Unhandled form: " + form[0];
 };
 
 var evaluate = function (string, env) {
