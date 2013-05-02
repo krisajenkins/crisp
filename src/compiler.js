@@ -25,7 +25,7 @@ var analyze_self_evaluating = function (form) {
 
 var analyze_symbol = function (form) {
 	return function (env) {
-		return env[form.name];
+		return env[form];
 	};
 };
 
@@ -62,26 +62,62 @@ var analyze_def = function (form) {
 		analyzed_body = analyze(form[2]);
 
 	return function (env) {
-		env[symbol.name] = analyzed_body(env);
+		env[symbol] = analyzed_body(env);
+		return symbol;
 	};
-}
+};
 
-var analyze_apply = function (form) {
-	var head = form.shift(),
-		tail = form,
-		analyzed_tail = tail.map(analyze);
+var Lambda = function (args, body, env) {
+	this.args = args;
+	this.body = body;
+	this.env = env;
+};
+Lambda.prototype.toString = function () {
+	return "[ Lambda ]";
+};
 
-	assert.equal(true, head instanceof Symbol, "Head of form is not a Symbol: ", head);
+var analyze_lambda = function (form) {
+	assert.equal(3, form.length, "Invalid fn form: " + form);
+	var args = form[1],
+		body = form[2],
+		analyzed_args = analyze(args),
+		analyzed_body = analyze(body);
 
 	return function (env) {
-		var f = env[head.name];
-		if (typeof(f) === 'undefined') {
-			throw "Unknown function: " + head.name;
-		}
-		var args = analyzed_tail.map(function (analysis) {
+		return new Lambda(args, analyzed_body, env);
+	};
+};
+
+var analyze_primitive = function (form) {
+	var fn_name = form.shift(),
+		analyzed_fn = analyze(fn_name),
+		analyzed_args = form.map(analyze);
+
+	// Primitive.
+	return function (env) {
+		var fn, args, sub_env, i;
+
+		fn = analyzed_fn(env);
+		args = analyzed_args.map(function (analysis) {
 			return analysis(env);
 		});
-		return f.apply(env, args);
+
+		if (fn instanceof Lambda) {
+			sub_env = fn.env.extend();
+			assert.equal(fn.args.length, args.length, "Function called with invalid number of arguments.");
+			
+			for (i = 0; i < fn.args.length; i++) {
+				sub_env[fn.args[i]] = args[i];
+			}
+
+			return fn.body(sub_env);
+		}
+
+		try {
+			return fn.apply(env, args); // TODO What should 'this' be?
+		} catch (e) {
+			throw new Error("Failed to apply function: " + fn_name);
+		}
 	};
 };
 
@@ -107,7 +143,11 @@ var analyze = function (form) {
 			return analyze_def(form);
 		}
 
-		return analyze_apply(form);
+		if (equal(form[0], new Symbol("fn"))) {
+			return analyze_lambda(form);
+		}
+
+		return analyze_primitive(form);
 	}
 
 	throw "Unhandled form: " + form[0];
@@ -120,7 +160,7 @@ var evaluate = function (string, env) {
 	form = read(string);
 	// console.log("FORM", form);
 	analyzed = analyze(form);
-	// console.log("ANALYSIS", analyzed);
+	// console.log("ANALYSIS", analyzed, typeof(analyzed));
 	result = analyzed(env);
 	// console.log("RESULT", result, typeof(result));
 

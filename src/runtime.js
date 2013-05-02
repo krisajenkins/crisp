@@ -53,19 +53,29 @@ var equal = function equal(x, y) {
 
 exports.equal = equal;
 
-var Environment = function () {
-};
-Environment.prototype.nil = void(0);
-Environment.prototype.true = true;
-Environment.prototype.false = false;
-Environment.prototype["+"] = function () {
+var Environment = function () {};
+exports.Environment = Environment;
+Environment.prototype.extend = function () {
+	var Parent;
+	
+	Parent = function () {};
+	Parent.prototype = this;
+
+	return new Parent();
+}
+
+var base_environment = new Environment();
+base_environment[new Symbol("nil")] = void(0);
+base_environment[new Symbol("true")] = true;
+base_environment[new Symbol("false")] = false;
+base_environment[new Symbol("+")] = function () {
 	var result = 0, i;
 	for (i = 0; i < arguments.length; i++) {
 		result += arguments[i];
 	}
 	return result;
 };
-Environment.prototype["-"] = function (head) {
+base_environment[new Symbol("-")] = function (head) {
 	if (typeof(head) === 'undefined') {
 		return 0;
 	}
@@ -77,7 +87,7 @@ Environment.prototype["-"] = function (head) {
 	}
 	return result;
 };
-Environment.prototype["*"] = function (head) {
+base_environment[new Symbol("*")] = function (head) {
 	if (typeof(head) === 'undefined') {
 		return 0;
 	}
@@ -89,7 +99,7 @@ Environment.prototype["*"] = function (head) {
 	}
 	return result;
 };
-Environment.prototype["/"] = function (head) {
+base_environment[new Symbol("/")] = function (head) {
 	if (typeof(head) === 'undefined') {
 		return 0;
 	}
@@ -101,10 +111,14 @@ Environment.prototype["/"] = function (head) {
 	}
 	return result;
 };
-Environment.prototype["="] = equal;
+base_environment[new Symbol("vec")] = function () {
+	return arguments;
+}
+base_environment[new Symbol("=")] = equal;
 
 // Environment.prototype.extend = function () {
 // 	console.log("Extending environment.");
 // 	return new this.constructor();
 // };
-exports.Environment = Environment;
+
+exports.base_environment = base_environment;
