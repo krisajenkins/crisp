@@ -54,7 +54,6 @@ var equal = function equal(x, y) {
 exports.equal = equal;
 
 var Environment = function () {
-	console.log("Creating environment.");
 };
 Environment.prototype.nil = void(0);
 Environment.prototype.true = true;

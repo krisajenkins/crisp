@@ -93,9 +93,7 @@ var analyze = function (form) {
 	throw "Unhandled form: " + form[0];
 };
 
-var env = new Environment();
-
-var evaluate = function (string) {
+var evaluate = function (string, env) {
 	var form, analyzed, result;
 
 	// console.log("STRING", string);
