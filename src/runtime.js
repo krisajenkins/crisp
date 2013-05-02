@@ -9,6 +9,9 @@ Symbol.prototype.equal = function(x, y) {
 		&&
 		(x.name === y.name);
 };
+Symbol.prototype.toString = function () {
+	return "[Symbol {name: " + this.name + "}]";
+};
 exports.Symbol = Symbol;
 
 var Keyword = function (name) {
@@ -19,6 +22,9 @@ Keyword.prototype.equal = function(x, y) {
 	return (x.type === y.type)
 		&&
 		(x.name === y.name);
+};
+Keyword.prototype.toString = function () {
+	return "[Keyword {name: " + this.name + "}]";
 };
 exports.Keyword = Keyword;
 
