@@ -29,6 +29,9 @@ describe('compiler', function () {
 		assert.equal(evaluate("(- 5 2)"), 3);
 		assert.equal(evaluate("(- 5 2 1)"), 2);
 
+		assert.equal(evaluate("(* 3 4 5)"), 60);
+		assert.equal(evaluate("(/ 20 2 5)"), 2);
+
 		assert.equal(evaluate("(= 1 2)"), false);
 		assert.equal(evaluate("(= 2 2)"), true);
 		assert.equal(evaluate('(= "test" "test")'), true);

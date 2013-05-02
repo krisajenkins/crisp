@@ -78,6 +78,30 @@ Environment.prototype["-"] = function (head) {
 	}
 	return result;
 };
+Environment.prototype["*"] = function (head) {
+	if (typeof(head) === 'undefined') {
+		return 0;
+	}
+
+	var result = head, i;
+	
+	for (i = 1; i < arguments.length; i++) {
+		result *= arguments[i];
+	}
+	return result;
+};
+Environment.prototype["/"] = function (head) {
+	if (typeof(head) === 'undefined') {
+		return 0;
+	}
+
+	var result = head, i;
+	
+	for (i = 1; i < arguments.length; i++) {
+		result /= arguments[i];
+	}
+	return result;
+};
 Environment.prototype["="] = equal;
 
 // Environment.prototype.extend = function () {
