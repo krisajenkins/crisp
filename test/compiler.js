@@ -30,7 +30,7 @@ describe('compiler', function () {
 			}
 		);
 	});
-	it('apply Primitive', function () {
+	it('Apply Primitive', function () {
 		assert.equal(evaluate("(+ 1 2)", env), 3);
 		assert.equal(evaluate("(+ 1 -2 -5)", env), -6);
 		assert.equal(evaluate("(- 5 2)", env), 3);
@@ -43,6 +43,9 @@ describe('compiler', function () {
 		assert.equal(evaluate("(= 2 2)", env), true);
 		assert.equal(evaluate('(= "test" "test")', env), true);
 		assert.equal(evaluate('(= "test" "toast")', env), false);
+	});
+	it('Recursive Apply Primitive', function () {
+		assert.equal(evaluate("(* (+ 1 2) (/ 10 2))", env), 15);
 	});
 	it('if', function () {
 		assert.equal(evaluate("(if true 1 2)", env), 1);

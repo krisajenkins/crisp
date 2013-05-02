@@ -68,14 +68,20 @@ var analyze_def = function (form) {
 
 var analyze_apply = function (form) {
 	var head = form.shift(),
-		tail = form;
+		tail = form,
+		analyzed_tail = tail.map(analyze);
+
 	assert.equal(true, head instanceof Symbol, "Head of form is not a Symbol: ", head);
+
 	return function (env) {
 		var f = env[head.name];
 		if (typeof(f) === 'undefined') {
 			throw "Unknown function: " + head.name;
 		}
-		return f.apply(env, tail);
+		var args = analyzed_tail.map(function (analysis) {
+			return analysis(env);
+		});
+		return f.apply(env, args);
 	};
 };
 
