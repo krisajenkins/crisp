@@ -1,8 +1,21 @@
 "use strict";
 
+var is_atom = function (form) {
+	return !(form instanceof Array);
+};
+exports.is_atom = is_atom;
+
+var is_self_evaluating = function (form) {
+	return typeof(form) === "number"
+		||
+		typeof(form) === "string";
+};
+exports.is_self_evaluating = is_self_evaluating;
+
 var Symbol = function (name) {
 	this.name = name;
 };
+
 Symbol.prototype.type = "crisp.runtime/symbol";
 Symbol.prototype.equal = function(x, y) {
 	return (x.type === y.type)
@@ -10,7 +23,7 @@ Symbol.prototype.equal = function(x, y) {
 		(x.name === y.name);
 };
 Symbol.prototype.toString = function () {
-	return "[Symbol {name: " + this.name + "}]";
+	return "#" + this.name;
 };
 exports.Symbol = Symbol;
 
@@ -24,7 +37,7 @@ Keyword.prototype.equal = function(x, y) {
 		(x.name === y.name);
 };
 Keyword.prototype.toString = function () {
-	return "[Keyword {name: " + this.name + "}]";
+	return ":" + this.name + "}]";
 };
 exports.Keyword = Keyword;
 
@@ -122,3 +135,13 @@ base_environment[new Symbol("=")] = equal;
 // };
 
 exports.base_environment = base_environment;
+
+var Lambda = function (args, body, env) {
+	this.args = args;
+	this.body = body;
+	this.env = env;
+};
+Lambda.prototype.toString = function () {
+	return "[ Lambda ]";
+};
+exports.Lambda = Lambda;
