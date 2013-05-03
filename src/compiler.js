@@ -3,28 +3,41 @@
 var assert = require('assert');
 var Symbol = require('./runtime').Symbol;
 var Keyword = require('./runtime').Keyword;
+var Lambda = require('./runtime').Lambda; // TODO Delete?
 var Environment = require('./runtime').Environment;
 var equal = require('./runtime').equal;
-var read = require('./reader').read;
-
-var is_atom = function (form) {
-	return !(form instanceof Array);
+var read_string = require('./reader').read_string;
+var fs = require('fs');
+var base_environment = require('../src/runtime').base_environment;
+var is_atom = require('./runtime').is_atom;
+var is_self_evaluating = require('./runtime').is_self_evaluating;
+var is_self_printing = function (form) {
+	return (typeof(form) === 'number');
 };
 
-var is_self_evaluating = function (form) {
-	return typeof(form) === "number"
-		||
-		typeof(form) === "string";
+// TODO redefs!
+Symbol.prototype.toString = function () {
+	return this.name;
 };
 
-var analyze = function (form) {
+// TODO Duplication of interpreter code.
+var analyze = function (form, env, cont) {
+	// console.log("ANALYZING", form);
 	if (is_atom(form)) {
-		if (is_self_evaluating(form)) {
-			return analyze.self_evaluating(form);
+		if (is_self_printing(form)) {
+			return analyze.self_printing(form, env, cont);
 		}
 
 		if (form instanceof Symbol) {
-			return analyze.symbol(form);
+			return analyze.symbol(form, env, cont);
+		}
+
+		if (form instanceof Keyword) {
+			return analyze.keyword(form, env, cont);
+		}
+
+		if (typeof(form) === "string") {
+			return analyze.string(form, env, cont);
 		}
 	} else {
 		if (equal(form[0], new Symbol("quote"))) {
@@ -32,138 +45,220 @@ var analyze = function (form) {
 		}
 
 		if (equal(form[0], new Symbol("if"))) {
-			return analyze.if(form);
+			return analyze.if(form, env, cont);
 		}
 
 		if (equal(form[0], new Symbol("def"))) {
-			return analyze.def(form);
+			return analyze.def(form, env, cont);
 		}
 
 		if (equal(form[0], new Symbol("fn"))) {
-			return analyze.lambda(form);
+			return analyze.lambda(form, env, cont);
 		}
 
-		return analyze.primitive(form);
+		return analyze.primitive(form, env, cont);
 	}
 
-	throw "Unhandled form: " + form[0];
+	throw "Unhandled form: " + form;
 };
 
-analyze.self_evaluating = function (form) {
-	return function (env) {
-		return form;
-	};
+analyze.self_printing = function (form, env, cont) {
+	cont(form);
 };
 
-analyze.symbol = function (form) {
-	return function (env) {
-		return env[form];
-	};
+analyze.symbol = function (form, env, cont) {
+	cont(form);
 };
 
-analyze.quote = function (form) {
-	assert.equal(form.length, 2, "Invalid quote form: " + form);
-	return function (env) {
-		return form[1];
-	};
+analyze.keyword = function (form, env, cont) {
+	cont('"' + form.name + '"');
 };
 
-analyze.if = function (form) {
+analyze.string = function (form, env, cont) {
+	cont('"' + form + '"');
+};
+
+analyze.if = function (form, env, cont) {
 	assert.equal(true, 3 <= form.length <= 4, "Invalid if form: " + form);
-	var analyzed_test, analyzed_then, analyzed_else;
+	var result = [],
+		test_form, then_form, else_form;
 
-	if (form.length === 3) {
-		form.push(new Symbol("nil"));
+	analyze(form[1], env, function (statement) {
+		test_form = statement;
+	});
+
+	analyze(form[2], env, function (statement) {
+		then_form = statement;
+	});
+	if (form.length === 4) {
+		analyze(form[3], env, function (statement) {
+			else_form = statement;
+		});
+	} else {
+		else_form = "undefined";
 	}
 
-	analyzed_test = analyze(form[1]);
-	analyzed_then = analyze(form[2]);
-	analyzed_else = analyze(form[3]);
+	result.push(test_form + " ? " );
+	result.push(then_form);
+	result.push(" : ");
+	result.push(else_form);
 
-	return function (env) {
-		if (analyzed_test(env)) {
-			return analyzed_then(env);
-		}
-		return analyzed_else(env);
-	};
+	cont(result.join("\n"));
 };
 
-analyze.def = function (form) {
+analyze.def = function (form, env, cont) {
 	assert.equal(3, form.length, "Invalid def form: " + form);
 	var symbol = form[1],
-		analyzed_body = analyze(form[2]);
+		newcont = function (statement) {
+			cont("var " + symbol.name + " = " + statement + ";\nexports." + symbol.name + " = " + symbol.name);
+		};
+	analyze(form[2], env, newcont);
+};
 
-	return function (env) {
-		env[symbol] = analyzed_body(env);
-		return symbol;
+analyze.lambda = function (form, env, cont) {
+	var newcont = function (statement) {
+		cont("function (" + form[1].slice(1).join(", ") + ") {\nreturn " + statement + ";\n}");
 	};
+	analyze(form[2], env, newcont);
 };
 
-var Lambda = function (args, body, env) {
-	this.args = args;
-	this.body = body;
-	this.env = env;
-};
-Lambda.prototype.toString = function () {
-	return "[ Lambda ]";
-};
-
-analyze.lambda = function (form) {
-	assert.equal(3, form.length, "Invalid fn form: " + form);
-	var args = form[1],
-		body = form[2],
-		analyzed_args = analyze(args),
-		analyzed_body = analyze(body);
-
-	return function (env) {
-		return new Lambda(args, analyzed_body, env);
-	};
+analyze.sequence = function (forms, env, cont) {
+	switch(forms.length) {
+		case 0:
+			cont("");
+			break;
+		case 1:
+			analyze(forms[0], env, function (statement) {
+				cont(statement);
+			});
+			break;
+		default:
+			analyze(forms[0], env, function (statement1) {
+				analyze.sequence(forms.slice(1), env, function (statement2) {
+					cont(statement1 + ", " + statement2);
+				});
+			});
+	}
 };
 
-analyze.primitive = function (form) {
-	var fn_name = form.shift(),
-		analyzed_fn = analyze(fn_name),
-		analyzed_args = form.map(analyze);
+analyze.join_sequence = function (forms, separator, env, cont) {
+	switch(forms.length) {
+		case 0:
+			cont("");
+			break;
+		case 1:
+			analyze(forms[0], env, function (statement) {
+				cont(statement);
+			});
+			break;
+		default:
+			analyze(forms[0], env, function (statement1) {
+				analyze.join_sequence(forms.slice(1), separator, env, function (statement2) {
+					cont(statement1 + separator + statement2);
+				});
+			});
+	}
+};
 
-	// Primitive.
-	return function (env) {
-		var fn, args, sub_env, i;
+analyze.primitive = function (form, env, cont) {
+	var fn_name = form[0],
+		fn_args = form.slice(1),
+		inline_cont,
+		prefix_cont,
+		newcont;
 
-		fn = analyzed_fn(env);
-		args = analyzed_args.map(function (analysis) {
-			return analysis(env);
+	if (is_atom(fn_name)) {
+		inline_cont = function (statement) {
+			cont("(" + statement + ")");
+		};
+
+		prefix_cont = function (statement) {
+			cont(fn_name + "(" + statement + ")");
+		};
+
+		if (equal(fn_name, new Symbol("+"))) {
+			analyze.join_sequence(fn_args, " + ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("*"))) {
+			analyze.join_sequence(fn_args, " * ", env, inline_cont);
+		} else {
+			analyze.sequence(fn_args, env, prefix_cont);
+		}
+	} else {
+		analyze(fn_name, env, function (fn_statement) {
+			analyze.sequence(fn_args, env, function (args_statement) {
+				cont("((" + fn_statement + ")(" + args_statement + "))");
+			});
 		});
-
-		if (fn instanceof Lambda) {
-			sub_env = fn.env.extend();
-			assert.equal(fn.args.length, args.length, "Function called with invalid number of arguments.");
-			
-			for (i = 0; i < fn.args.length; i++) {
-				sub_env[fn.args[i]] = args[i];
-			}
-
-			return fn.body(sub_env);
-		}
-
-		try {
-			return fn.apply(env, args); // TODO What should 'this' be?
-		} catch (e) {
-			throw new Error("Failed to apply function: " + fn_name);
-		}
-	};
+	}
 };
 
-var evaluate = function (string, env) {
-	var form, analyzed, result;
+var preamble = function () {
+	return ["// START", '"use strict";\n'];
+};
 
-	// console.log("STRING", string);
-	form = read(string);
-	// console.log("FORM", form);
-	analyzed = analyze(form);
-	// console.log("ANALYSIS", analyzed, typeof(analyzed));
-	result = analyzed(env);
-	// console.log("RESULT", result, typeof(result));
+var postamble = function () {
+	return ["// END"];
+};
+
+var compile = function (string, env) {
+	var remaining_string = string,
+		result = [],
+		form, read, analyzed, compiled;
+	
+	// TODO CPS-Cheat!
+	function save_result(statement) {
+		result.push(statement + ";\n");
+	}
+
+	result = result.concat(preamble());
+	while (remaining_string.length > 0) {
+
+		read = read_string(remaining_string);
+		form = read.result;
+		remaining_string = read.remainder;
+
+		if (read.type !== 'WHITESPACE') {
+			console.log("FORM", form);
+
+			analyze(form, env, save_result);
+		}
+	}	
+	result = result.concat(postamble());
 
 	return result;
 };
-exports.evaluate = evaluate;
+exports.compile = compile;
+
+String.prototype.repeat = function (n) {
+	var result = "", i;
+	for (i = 0; i < n; i++) {
+		result = result.concat(this);
+	}
+	return result;
+};
+
+var usage = "USAGE TODO";
+
+var main = function () {
+	assert.equal(process.argv.length, 4, usage);
+	var input = process.argv[2],
+		output = process.argv[3],
+		env = base_environment.extend();
+
+	console.log("Compiling:", input, "to:", output);
+
+	fs.readFile(input, {encoding: "utf-8"}, function (error, data) {
+		if (error) { throw error; }
+		var compiled = compile(data, env),
+			string = compiled.join("\n");
+
+		fs.writeFile(output, string, function (error, data) {
+			if (error) { throw error; }
+			console.log("Done.");
+		});
+	});
+};
+
+if (require.main === module) {
+    main();
+}

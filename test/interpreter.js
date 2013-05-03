@@ -2,12 +2,12 @@
 "use strict";
 
 var assert = require('assert');
-var evaluate = require('../src/compiler').evaluate;
+var evaluate = require('../src/interpreter').evaluate;
 var Symbol = require('../src/runtime').Symbol;
 var Keyword = require('../src/runtime').Keyword;
 var base_environment = require('../src/runtime').base_environment;
 
-describe('compiler', function () {
+describe('interpreter', function () {
 	var env;
 
 	beforeEach(function () {
