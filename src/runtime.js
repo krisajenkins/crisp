@@ -41,6 +41,16 @@ Keyword.prototype.toString = function () {
 };
 exports.Keyword = Keyword;
 
+var Lambda = function (args, body, env) {
+	this.args = args;
+	this.body = body;
+	this.env = env;
+};
+Lambda.prototype.toString = function () {
+	return "[ Lambda ]";
+};
+exports.Lambda = Lambda;
+
 var equal = function equal(x, y) {
 	if (typeof(x) === 'undefined') {
 		return typeof(y) === 'undefined';
@@ -135,13 +145,3 @@ base_environment[new Symbol("=")] = equal;
 // };
 
 exports.base_environment = base_environment;
-
-var Lambda = function (args, body, env) {
-	this.args = args;
-	this.body = body;
-	this.env = env;
-};
-Lambda.prototype.toString = function () {
-	return "[ Lambda ]";
-};
-exports.Lambda = Lambda;
