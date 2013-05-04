@@ -75,7 +75,7 @@ Environment.prototype.extend = function () {
 	Parent.prototype = this;
 
 	return new Parent();
-}
+};
 
 var base_environment = new Environment();
 base_environment[new Symbol("nil")] = void(0);
