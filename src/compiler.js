@@ -40,16 +40,25 @@ var analyze = function (form, env, cont) {
 			return analyze.string(form, env, cont);
 		}
 	} else {
+		// TODO
 		if (equal(form[0], new Symbol("quote"))) {
-			return analyze.quote(form);
+			return analyze.quote(form, env, cont);
 		}
 
 		if (equal(form[0], new Symbol("if"))) {
 			return analyze.if(form, env, cont);
 		}
 
+		if (equal(form[0], new Symbol("do"))) {
+			return analyze.do(form, env, cont);
+		}
+
 		if (equal(form[0], new Symbol("def"))) {
 			return analyze.def(form, env, cont);
+		}
+
+		if (equal(form[0], new Symbol("set!"))) {
+			return analyze.set(form, env, cont);
 		}
 
 		if (equal(form[0], new Symbol("fn"))) {
@@ -67,7 +76,17 @@ analyze.self_printing = function (form, env, cont) {
 };
 
 analyze.symbol = function (form, env, cont) {
-	cont(form);
+	var name = form.name,
+		is, dash;
+
+	is = name.match(/(.*)\?$/);
+	if (is) {
+		name = "is_" + is[1];
+	}
+	
+	name = name.replace(/-/g, "_");
+	
+	cont(name);
 };
 
 analyze.keyword = function (form, env, cont) {
@@ -108,18 +127,39 @@ analyze.if = function (form, env, cont) {
 
 analyze.def = function (form, env, cont) {
 	assert.equal(3, form.length, "Invalid def form: " + form);
-	var symbol = form[1],
-		newcont = function (statement) {
-			cont("var " + symbol.name + " = " + statement + ";\nexports." + symbol.name + " = " + symbol.name);
-		};
-	analyze(form[2], env, newcont);
+	analyze(form[1], env, function (name) {
+		analyze(form[2], env, function (value) {
+			cont("var " + name + " = " + value + ";\nexports." + name + " = " + name);
+		});
+	});
+};
+
+analyze.set = function (form, env, cont) {
+	assert.equal(3, form.length, "Invalid set form: " + form);
+	analyze(form[1], env, function (name) {
+		analyze(form[2], env, function (value) {
+			cont(name + " = " + value);
+		});
+	});
 };
 
 analyze.lambda = function (form, env, cont) {
-	var newcont = function (statement) {
-		cont("function (" + form[1].slice(1).join(", ") + ") {\nreturn " + statement + ";\n}");
-	};
-	analyze(form[2], env, newcont);
+	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
+	var arglist = form[1].slice(1).join(", ");
+
+	if (form.length === 2) {
+		cont("function (" + arglist + ") {}");
+	} else {
+		analyze.do_inner(
+			form.slice(2),
+			env,
+			function (statement) {
+				cont("function (" + arglist + ") {\n" + statement + "\n}");
+			},
+			";\n",
+			function (x) { return "return " + x + ";"; }
+		);
+	}
 };
 
 analyze.sequence = function (forms, env, cont) {
@@ -160,6 +200,33 @@ analyze.join_sequence = function (forms, separator, env, cont) {
 	}
 };
 
+analyze.do_inner = function (form, env, cont, join_string, last_formatter) {
+	switch(form.length) {
+		case 0:
+			return cont(last_formatter(""));
+		case 1:
+			return analyze(form[0], env, function (statement) {
+				cont(last_formatter(statement));
+			});
+		default:
+			return analyze(form[0], env, function (statement1) {
+				analyze.do_inner(
+					form.slice(1),
+					env,
+					function (statement2) {
+						cont(statement1 + join_string + statement2);
+					},
+					join_string,
+					last_formatter
+				);
+			});
+	}
+};
+
+analyze.do = function (form, env, cont) {
+	analyze.do_inner(form.slice(1), env, cont, "", function (x) { return x; });
+};
+
 analyze.primitive = function (form, env, cont) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
@@ -180,6 +247,25 @@ analyze.primitive = function (form, env, cont) {
 			analyze.join_sequence(fn_args, " + ", env, inline_cont);
 		} else if (equal(fn_name, new Symbol("*"))) {
 			analyze.join_sequence(fn_args, " * ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("="))) {
+			analyze.join_sequence(fn_args, " === ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("and"))) {
+			analyze.join_sequence(fn_args, " && ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("or"))) {
+			analyze.join_sequence(fn_args, " || ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("not"))) {
+			assert.equal(1, fn_args.length, "Invalid not form: " + form);
+			analyze(fn_args[0], env, function (statement) {
+				cont("!" + statement);
+			});
+		} else if (equal(fn_name, new Symbol("==="))) {
+			analyze.join_sequence(fn_args, " === ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("instanceof"))) {
+			analyze.join_sequence(fn_args, " instanceof ", env, inline_cont);
+		} else if (equal(fn_name, new Symbol("throw"))) {
+			analyze.join_sequence(fn_args, " + ", env, function (args_statement) {
+				cont("(function () { throw " + args_statement + "; }())");
+			});
 		} else {
 			analyze.sequence(fn_args, env, prefix_cont);
 		}
@@ -193,7 +279,7 @@ analyze.primitive = function (form, env, cont) {
 };
 
 var preamble = function () {
-	return ["// START", '"use strict";\n'];
+	return ["/* jslint indent: 0 */", "// START", '"use strict";\n'];
 };
 
 var postamble = function () {
@@ -218,7 +304,7 @@ var compile = function (string, env) {
 		remaining_string = read.remainder;
 
 		if (read.type !== 'WHITESPACE') {
-			console.log("FORM", form);
+			// console.log("FORM", form);
 
 			analyze(form, env, save_result);
 		}
@@ -245,7 +331,7 @@ var main = function () {
 		output = process.argv[3],
 		env = base_environment.extend();
 
-	console.log("Compiling:", input, "to:", output);
+	// console.log("Compiling:", input, "to:", output);
 
 	fs.readFile(input, {encoding: "utf-8"}, function (error, data) {
 		if (error) { throw error; }
@@ -254,7 +340,6 @@ var main = function () {
 
 		fs.writeFile(output, string, function (error, data) {
 			if (error) { throw error; }
-			console.log("Done.");
 		});
 	});
 };
