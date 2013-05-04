@@ -37,7 +37,7 @@ Keyword.prototype.equal = function(x, y) {
 		(x.name === y.name);
 };
 Keyword.prototype.toString = function () {
-	return ":" + this.name + "}]";
+	return ":" + this.name;
 };
 exports.Keyword = Keyword;
 
