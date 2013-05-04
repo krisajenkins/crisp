@@ -7,14 +7,17 @@ var Symbol = require('../src/runtime').Symbol;
 var Keyword = require('../src/runtime').Keyword;
 
 describe('reader', function () {
-	it('Simple', function () {
+	it('Numbers', function () {
 		assert.equal(read_string("2").result, 2);
 		assert.equal(read_string("2").result, 2);
 		assert.equal(read_string("-9").result, -9);
 		assert.equal(read_string("51.13").result, 51.13);
+	});
+	it('Symbols', function () {
 		assert.deepEqual(read_string("somevar").result, new Symbol("somevar"));
 		assert.deepEqual(read_string("+").result, new Symbol("+"));
 		assert.deepEqual(read_string("list?").result, new Symbol("list?"));
+		assert.deepEqual(read_string("tom.dick_and-harry").result, new Symbol("tom.dick_and-harry"));
 	});
 	it('Strings', function () {
 		assert.equal(read_string('"test"').result, "test");
