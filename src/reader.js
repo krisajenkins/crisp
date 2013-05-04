@@ -1,6 +1,5 @@
 "use strict";
 
-var TokenizerPackage = require('tokenizer');
 var Symbol = require('./runtime').Symbol;
 var Keyword = require('./runtime').Keyword;
 
