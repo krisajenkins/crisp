@@ -28,5 +28,4 @@ module.exports = function(grunt) {
 
 	// Default task(s).
 	grunt.registerTask('default', ['cafemocha', 'uglify']);
-	grunt.registerTask('uglify', ['uglify']);
 };
