@@ -133,7 +133,7 @@ analyze.primitive = function (form) {
 		try {
 			return fn.apply(env, args); // TODO What should 'this' be?
 		} catch (e) {
-			throw new Error("Failed to apply function: " + fn_name);
+			throw new Error("Failed to apply function: " + fn_name + " Error was: " + e);
 		}
 	};
 };
