@@ -1,0 +1,68 @@
+(def atom?
+  (fn [form]
+    (not (instanceof form Array))))
+
+(def self-evaluating?
+  (fn [form]
+    (or (= (typeof form) "number")
+        (= (typeof form) "string"))))
+
+(def Symbol
+  (fn [name]
+    (set! this.name name)))
+
+(set! Symbol.prototype.type "crisp.runtime/symbol")
+(set! Symbol.prototype.equal
+      (fn [x y]
+        (and (= x.type y.type)
+             (= x.name y.name))))
+(set! Symbol.prototype.toString
+      (fn []
+        (+ "#" this.name)))
+
+(def Keyword
+  (fn [name]
+    (set! this.name name)))
+
+(set! Keyword.prototype.type "crisp.runtime/keyword")
+(set! Keyword.prototype.equal
+      (fn [x y]
+        (and (= x.type y.type)
+             (= x.name y.name))))
+(set! Keyword.prototype.toString
+      (fn []
+        (+ ":" this.name)))
+
+(def Lambda
+  (fn [args body env]
+    (set! this.args args)
+    (set! this.body body)
+    this.env
+    ))
+
+(set! Lambda.prototype.type "crisp.runtime/lambda")
+(set! Lambda.prototype.toString
+      (fn []
+        "[ Lambda ]"))
+
+(def equal
+  (fn [x y]
+    (if (= (typeof x) "undefined")
+      (= (typeof y) "undefined")
+      (if x.equal
+        (x.equal x y)
+        (if y.equal
+          (y.equal x y)
+          (if (= (typeof x)
+                 (typeof y))
+            (=== x y)
+            (throw "Cannot determine equality for objects " x " and " y)))))))
+
+(def Environment (fn []))
+
+(set! Environment.prototype.type "crisp.runtime/environment")
+(set! Environment.prototype.extend
+      (fn []
+        (def Parent (fn []))
+        (set! Parent.prototype this)
+        Parent))
