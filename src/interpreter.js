@@ -5,6 +5,7 @@ var Symbol = require('./runtime').Symbol;
 var Keyword = require('./runtime').Keyword;
 var Environment = require('./runtime').Environment;
 var Lambda = require('./runtime').Lambda;
+var Macro = require('./runtime').Macro;
 var equal = require('./runtime').equal;
 var read = require('./reader').read;
 var is_atom = require('./runtime').is_atom;
@@ -24,6 +25,10 @@ var analyze = function (form) {
 			return analyze.quote(form);
 		}
 
+		if (equal(form[0], new Symbol("syntax-quote"))) {
+			return analyze.syntax_quote(form);
+		}
+
 		if (equal(form[0], new Symbol("if"))) {
 			return analyze.if(form);
 		}
@@ -36,7 +41,11 @@ var analyze = function (form) {
 			return analyze.lambda(form);
 		}
 
-		return analyze.primitive(form);
+		if (equal(form[0], new Symbol("macro"))) {
+			return analyze.macro(form);
+		}
+
+		return analyze.application(form);
 	}
 
 	throw "Unhandled form: " + form[0];
@@ -58,6 +67,40 @@ analyze.quote = function (form) {
 	assert.equal(form.length, 2, "Invalid quote form: " + form);
 	return function (env) {
 		return form[1];
+	};
+};
+
+var syntax_expand = function (form, env) {
+	var result, i, expanded, analysis;
+
+	if (is_atom(form)) {
+		return form;
+	}
+
+	if (
+		form.length === 2
+		&&
+		equal(form[0], new Symbol("unquote"))
+	) {
+		analysis = analyze(form[1]);
+		result = analysis(env);
+		return result;
+	}
+
+	result = [];
+	for (i = 0; i < form.length; i = i + 1) {
+		expanded = syntax_expand(form[i], env);
+		result.push(expanded);
+	}
+
+	return result;
+};
+
+analyze.syntax_quote = function (form) {
+	assert.equal(form.length, 2, "Invalid syntax-quote form: " + form);
+	return function (env) {
+		var result = syntax_expand(form[1], env);
+		return result;
 	};
 };
 
@@ -104,27 +147,52 @@ analyze.lambda = function (form) {
 	};
 };
 
-analyze.primitive = function (form) {
+analyze.macro = function (form) {
+	assert.equal(3, form.length, "Invalid macro form: " + form);
+	var args = form[1].slice(1), // TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
+		body = form[2],
+		analyzed_args = analyze(args),
+		analyzed_body = analyze(body);
+
+	return function (env) {
+		return new Macro(args, analyzed_body, env);
+	};
+};
+
+analyze.application = function (form) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
-		analyzed_fn = analyze(fn_name),
-		analyzed_args = fn_args.map(analyze);
+		analyzed_fn,
+		analyzed_args;
 
-	// Primitive.
+	// TODO We're splitting off the head only to map analyze to everything.
+	analyzed_fn = analyze(fn_name);
+	analyzed_args = fn_args.map(analyze);
+
 	return function (env) {
-		var fn, args, sub_env, i;
+		var fn, args, sub_env, i, expanded_code, analysis;
 
 		fn = analyzed_fn(env);
 		args = analyzed_args.map(function (analysis) {
 			return analysis(env);
 		});
 
-		if (fn instanceof Lambda) {
+		if (
+			fn instanceof Lambda
+			||
+			fn instanceof Macro
+		) {
 			sub_env = fn.env.extend();
-			assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with invalid number of arguments: " + fn.args.length + ". Expected " + args.length + ":::" + fn.args );
-			
-			for (i = 0; i < fn.args.length; i++) {
+			assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with invalid number of arguments: " + fn.args.length + ". Expected " + args.length + ":::" + fn.args);
+
+			for (i = 0; i < fn.args.length; i = i + 1) {
 				sub_env[fn.args[i]] = args[i];
+			}
+
+			if (fn instanceof Macro) {
+				expanded_code = fn.body(sub_env);
+				analysis = analyze(expanded_code);
+				return analysis(env);
 			}
 
 			return fn.body(sub_env);

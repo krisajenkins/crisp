@@ -85,4 +85,9 @@ describe('interpreter', function () {
 		assert.equal(evaluate("((if true  double triple) 8)", env), 16);
 		assert.equal(evaluate("((if false double triple) 8)", env), 24);
 	});
+	it('Simple Macro', function () {
+		evaluate("(def unless (macro [test form] `(if (not ~test) ~form nil)))", env);
+		assert.equal(evaluate("(unless false 1)", env), 1);
+		assert.equal(evaluate("(unless true 1)", env), undefined);
+	});
 });

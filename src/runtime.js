@@ -8,6 +8,8 @@ exports.is_atom = is_atom;
 var is_self_evaluating = function (form) {
 	return typeof(form) === "number"
 		||
+		typeof(form) === "boolean"
+		||
 		typeof(form) === "string";
 };
 exports.is_self_evaluating = is_self_evaluating;
@@ -51,6 +53,17 @@ Lambda.prototype.toString = function () {
 };
 exports.Lambda = Lambda;
 
+var Macro = function (args, body, env) {
+	this.args = args;
+	this.body = body;
+	this.env = env;
+};
+
+Macro.prototype.toString = function () {
+	return "[ Macro ]";
+};
+exports.Macro = Macro;
+
 var equal = function equal(x, y) {
 	if (typeof(x) === 'undefined') {
 		return typeof(y) === 'undefined';
@@ -91,6 +104,10 @@ var base_environment = new Environment();
 base_environment[new Symbol("nil")] = void(0);
 base_environment[new Symbol("true")] = true;
 base_environment[new Symbol("false")] = false;
+base_environment[new Symbol("=")] = equal;
+base_environment[new Symbol("not")] = function (arg) {
+	return ! arg;
+};
 base_environment[new Symbol("+")] = function () {
 	var result = 0, i;
 	for (i = 0; i < arguments.length; i++) {
@@ -137,7 +154,6 @@ base_environment[new Symbol("/")] = function (head) {
 base_environment[new Symbol("vec")] = function () {
 	return arguments;
 }
-base_environment[new Symbol("=")] = equal;
 
 // Environment.prototype.extend = function () {
 // 	console.log("Extending environment.");
