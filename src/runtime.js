@@ -71,7 +71,7 @@ var equal = function equal(x, y) {
 	if (typeof(y) === 'undefined') {
 		return false;
 	}
-	
+
 	if (x.equal) {
 		return x.equal(x,y);
 	}
@@ -93,7 +93,7 @@ var Environment = function () {};
 exports.Environment = Environment;
 Environment.prototype.extend = function () {
 	var Parent;
-	
+
 	Parent = function () {};
 	Parent.prototype = this;
 
@@ -121,7 +121,7 @@ base_environment[new Symbol("-")] = function (head) {
 	}
 
 	var result = head, i;
-	
+
 	for (i = 1; i < arguments.length; i++) {
 		result -= arguments[i];
 	}
@@ -133,7 +133,7 @@ base_environment[new Symbol("*")] = function (head) {
 	}
 
 	var result = head, i;
-	
+
 	for (i = 1; i < arguments.length; i++) {
 		result *= arguments[i];
 	}
@@ -145,7 +145,7 @@ base_environment[new Symbol("/")] = function (head) {
 	}
 
 	var result = head, i;
-	
+
 	for (i = 1; i < arguments.length; i++) {
 		result /= arguments[i];
 	}
