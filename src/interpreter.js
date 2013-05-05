@@ -48,7 +48,7 @@ var analyze = function (form) {
 		return analyze.application(form);
 	}
 
-	throw "Unhandled form: " + form[0];
+	throw "Unhandled form: " + form;
 };
 
 analyze.self_evaluating = function (form) {
