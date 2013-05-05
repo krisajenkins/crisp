@@ -48,4 +48,19 @@ describe('reader', function () {
 		assert.deepEqual(read_string("{}").result, [new Symbol("hash-map")]);
 		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("hash-map"), new Symbol("a"), 1, new Symbol("b"), 2]);
 	});
+	it('Quotes', function () {
+		assert.deepEqual(
+			read_string("'a").result,
+			[
+				new Symbol("quote"),
+				new Symbol("a"),
+			]
+		);
+		assert.deepEqual(
+			read_string("'(1 2 3)").result,
+			[
+				new Symbol("quote"), [1, 2, 3]
+			]
+		);
+	});
 });

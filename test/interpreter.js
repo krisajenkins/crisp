@@ -25,7 +25,8 @@ describe('interpreter', function () {
 	});
 
 	it('Quote', function () {
-		assert.deepEqual(evaluate("(quote a)", env), new Symbol("a"));
+		assert.deepEqual(evaluate("'a", env), new Symbol("a"));
+		assert.deepEqual(evaluate("'(a b)", env), [new Symbol("a"), new Symbol("b")]);
 		assert.throws(
 			function () {
 				evaluate("(quote a b)", env);

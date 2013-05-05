@@ -30,6 +30,7 @@ var match_string			= make_parser(/^"([^"]*)"/m, 'STRING');
 var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
 var match_symbol			= make_parser(/^[\w\._\/\-\+!=?\*]+/, 'SYMBOL');
 var match_whitespace		= make_parser(/^\s+/, 'WHITESPACE');
+var match_quote				= make_parser(/^'/, 'QUOTE');
 
 function read_until(closing_matcher, string) {
 	var forms = [],
@@ -65,6 +66,14 @@ function read_string(string) {
 		col = 0,
 		match;
 
+	// Quotes.
+	match = match_quote(string);
+	if (match) {
+		match = read_string(match.remainder);
+		match.result = [new Symbol("quote"), match.result];
+		return match;
+	}
+	
 	// Lists.
 	match = match_open_parenthesis(string);
 	if (match) {
