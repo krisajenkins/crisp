@@ -17,7 +17,7 @@ exports.is_self_evaluating = is_self_evaluating;
 var Symbol = function (name) {
 	this.name = name;
 };
-
+exports.Symbol = Symbol;
 Symbol.prototype.type = "crisp.runtime/symbol";
 Symbol.prototype.equal = function(x, y) {
 	return (x.type === y.type)
@@ -27,11 +27,11 @@ Symbol.prototype.equal = function(x, y) {
 Symbol.prototype.toString = function () {
 	return "#" + this.name;
 };
-exports.Symbol = Symbol;
 
 var Keyword = function (name) {
 	this.name = name;
 };
+exports.Keyword = Keyword;
 Keyword.prototype.type = "crisp.runtime/keyword";
 Keyword.prototype.equal = function(x, y) {
 	return (x.type === y.type)
@@ -41,17 +41,16 @@ Keyword.prototype.equal = function(x, y) {
 Keyword.prototype.toString = function () {
 	return ":" + this.name;
 };
-exports.Keyword = Keyword;
 
 var Lambda = function (args, body, env) {
 	this.args = args;
 	this.body = body;
 	this.env = env;
 };
+exports.Lambda = Lambda;
 Lambda.prototype.toString = function () {
 	return "[ Lambda ]";
 };
-exports.Lambda = Lambda;
 
 var Macro = function (args, body, env) {
 	this.args = args;
@@ -86,7 +85,6 @@ var equal = function equal(x, y) {
 
 	throw "Cannot determine equality for objects " + x + " and " + y;
 };
-
 exports.equal = equal;
 
 var Environment = function () {};
@@ -101,6 +99,7 @@ Environment.prototype.extend = function () {
 };
 
 var base_environment = new Environment();
+exports.base_environment = base_environment;
 base_environment[new Symbol("nil")] = void(0);
 base_environment[new Symbol("true")] = true;
 base_environment[new Symbol("false")] = false;
@@ -154,10 +153,3 @@ base_environment[new Symbol("/")] = function (head) {
 base_environment[new Symbol("vec")] = function () {
 	return arguments;
 }
-
-// Environment.prototype.extend = function () {
-// 	console.log("Extending environment.");
-// 	return new this.constructor();
-// };
-
-exports.base_environment = base_environment;
