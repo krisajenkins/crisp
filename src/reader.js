@@ -31,6 +31,9 @@ var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
 var match_symbol			= make_parser(/^[\w\._\/\-\+!=?\*]+/, 'SYMBOL');
 var match_whitespace		= make_parser(/^\s+/, 'WHITESPACE');
 var match_quote				= make_parser(/^'/, 'QUOTE');
+var match_syntax_quote		= make_parser(/^`/, 'SYNTAX_QUOTE');
+var match_unquote_splicing	= make_parser(/^~@/, 'UNQUOTE_SPLICING');
+var match_unquote			= make_parser(/^~/, 'UNQUOTE');
 
 function read_until(closing_matcher, string) {
 	var forms = [],
@@ -66,21 +69,46 @@ function read_string(string) {
 		col = 0,
 		match;
 
-	// Quotes.
+	// Quote.
 	match = match_quote(string);
 	if (match) {
 		match = read_string(match.remainder);
 		match.result = [new Symbol("quote"), match.result];
 		return match;
 	}
-	
+
+
+	// Syntax-Quote.
+	match = match_syntax_quote(string);
+	if (match) {
+		match = read_string(match.remainder);
+		match.result = [new Symbol("syntax-quote"), match.result];
+		return match;
+	}
+
+	// Unquote-Splicing.
+	match = match_unquote_splicing(string);
+	if (match) {
+		match = read_string(match.remainder);
+		match.result = [new Symbol("unquote-splicing"), match.result];
+		return match;
+	}
+
+	// Unquote.
+	match = match_unquote(string);
+	if (match) {
+		match = read_string(match.remainder);
+		match.result = [new Symbol("unquote"), match.result];
+		return match;
+	}
+
 	// Lists.
 	match = match_open_parenthesis(string);
 	if (match) {
 		match = read_until(match_close_parenthesis, match.remainder);
 		return match;
 	}
-	
+
 	// Vectors.
 	match = match_open_bracket(string);
 	if (match) {
@@ -88,7 +116,7 @@ function read_string(string) {
 		match.result.unshift(new Symbol("vec"));
 		return match;
 	}
-	
+
 	// Maps.
 	match = match_open_brace(string);
 	if (match) {
@@ -96,7 +124,7 @@ function read_string(string) {
 		match.result.unshift(new Symbol("hash-map"));
 		return match;
 	}
-	
+
 	// Numbers.
 	match = match_number(string);
 	if (match) {

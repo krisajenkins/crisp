@@ -63,4 +63,26 @@ describe('reader', function () {
 			]
 		);
 	});
+	it('Macros', function () {
+		assert.deepEqual(
+			read_string("`(if ~test (do ~@body))").result,
+			[
+				new Symbol("syntax-quote"),
+				[
+					new Symbol("if"),
+					[
+						new Symbol("unquote"),
+						new Symbol("test"),
+					],
+					[
+						new Symbol("do"),
+						[
+							new Symbol("unquote-splicing"),
+							new Symbol("body"),
+						],
+					],
+				],
+			]
+		);
+	});
 });
