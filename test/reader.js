@@ -2,9 +2,9 @@
 "use strict";
 
 var assert = require('assert');
-var read_string = require('../src/reader').read_string;
-var Symbol = require('../src/runtime').Symbol;
-var Keyword = require('../src/runtime').Keyword;
+var read_string = require('../lib/reader').read_string;
+var Symbol = require('../lib/runtime').Symbol;
+var Keyword = require('../lib/runtime').Keyword;
 
 describe('reader', function () {
 	it('Numbers', function () {

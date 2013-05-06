@@ -2,10 +2,10 @@
 "use strict";
 
 var assert = require('assert');
-var evaluate = require('../src/interpreter').evaluate;
-var Symbol = require('../src/runtime').Symbol;
-var Keyword = require('../src/runtime').Keyword;
-var base_environment = require('../src/runtime').base_environment;
+var evaluate = require('../lib/interpreter').evaluate;
+var Symbol = require('../lib/runtime').Symbol;
+var Keyword = require('../lib/runtime').Keyword;
+var base_environment = require('../lib/runtime').base_environment;
 
 describe('interpreter', function () {
 	var env;

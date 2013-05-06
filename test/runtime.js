@@ -2,10 +2,10 @@
 "use strict";
 
 var assert = require('assert');
-var equal = require('../src/runtime').equal;
-var Symbol = require('../src/runtime').Symbol;
-var Keyword = require('../src/runtime').Keyword;
-var Environment = require('../src/runtime').Environment;
+var equal = require('../lib/runtime').equal;
+var Symbol = require('../lib/runtime').Symbol;
+var Keyword = require('../lib/runtime').Keyword;
+var Environment = require('../lib/runtime').Environment;
 
 describe('Equality', function () {
 	it('Keyword Equality', function () {

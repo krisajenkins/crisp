@@ -2,7 +2,7 @@
   "name": "crisp",
   "version": "0.0.0",
   "description": "A Lisp->Javascript compiler.",
-  "main": "crisp.js",
+  "main": "lib/compiler.js",
   "scripts": {
     "test": "test"
   },
