@@ -5,10 +5,17 @@ var vm = require('vm');
 var assert = require('assert');
 var compile_string = require('../lib/compiler').compile_string;
 
-var runIn = function (source, context) {
+var runIn = function (source, context, debug) {
 	var compiled, result;
 
 	compiled = compile_string(source);
+
+	if (debug) {
+		console.log();
+		console.log("====");
+		console.log(compiled);
+		console.log("====");
+	}
 
 	try {
 		result = vm.runInNewContext(compiled, context);
@@ -147,12 +154,15 @@ describe('compiler', function () {
 		compilesTo("(def thing_e (fn [x y & xs] xs)) (thing_e 1 3 5)", [5], {});
 	});
 
-	/* TODO
+	/*
 	it('Simple Macro', function () {
-		evaluate("(def unless (macro [test form] `(if (not ~test) ~form)))", env);
-		assert.equal(evaluate("(unless false 1)", env), 1);
-		assert.equal(evaluate("(unless true 1)", env), undefined);
+		runIn("(def unless (macro [test form] `(if (not ~test) ~form)))", context);
+		compilesTo("(unless false 1)", 1, context);
+		compilesTo("(unless true 1)", undefined, context);
 	});
+	*/
+
+	/* TODO
 	it('Varargs Macro', function () {
 		evaluate("(def when (macro [test & body] `(if ~test (do ~@body))))", env);
 		assert.equal(evaluate("(when true 5 4 3)", env), 3);

@@ -188,7 +188,7 @@ analyze.apply = function (form) {
 };
 
 var destructure_args = function (args) {
-	var varargs_point, varargs_symbol, named, rest, i,
+	var varargs_point, named, rest, i,
 		varargs_symbol = new Symbol("&");
 
 	// TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.

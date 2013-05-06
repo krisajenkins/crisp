@@ -67,10 +67,14 @@ return "[ Macro ]";
 
 exports.Macro = Macro;
 
-var Environment = function () {};
+var Environment = function () {
+return ;
+};
 
 Environment.prototype.extend = function () {
-var Parent = function () {};
+var Parent = function () {
+return ;
+};
 Parent.prototype = this;
 return new Parent();
 };

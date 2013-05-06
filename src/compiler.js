@@ -4,6 +4,8 @@ var assert = require('assert');
 var Symbol = require('./types').Symbol;
 var Keyword = require('./types').Keyword;
 var Environment = require('./runtime').Environment;
+var Lambda = require('./runtime').Lambda;
+var Macro = require('./runtime').Macro;
 var equal = require('./runtime').equal;
 var read_string = require('./reader').read_string;
 var fs = require('fs');
@@ -136,44 +138,44 @@ analyze.set = function (form, env) {
 	return name + " = " + value;
 };
 
-analyze.lambda = function (form, env) {
-	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
-	var arglist, varargs_point, varargs_symbol = new Symbol("&"), i,
-		arg, named, rest,
-		header, tail, vararg_slice, body;
+// TODO Copied from interpreter.
+var destructure_args = function (args) {
+	var varargs_point, named, rest, i,
+		varargs_symbol = new Symbol("&");
 
-	// TODO We're popping 'vec'.
-	arglist = form[1].slice(1);
+	// TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
+	assert.equal(true, equal(new Symbol("vec"), args[0]), "Invalid first arg: " + args[0]);
 
-	// Look for varargs.
 	varargs_point = -1;
-	for (i = 0; i < arglist.length; i = i + 1) {
-		arg = arglist[i];
-		if (equal(arg, varargs_symbol)) {
+	for (i = 0; i < args.length; i = i + 1) {
+		if (varargs_symbol.equal(args[i])) {
 			varargs_point = i;
-			assert.equal(varargs_point + 2, arglist.length, "Only one argument may appear after the & in a varargs declaration.");
 		}
 	}
 
 	if (varargs_point === -1) {
-		named = arglist;
-		vararg_slice = "";
+		named = args.slice(1);
+		rest = undefined;
 	} else {
-		named = arglist.slice(0, varargs_point);
-		vararg_slice = "var " + arglist[varargs_point + 1] + " = Array.prototype.slice.call(arguments, " + varargs_point +");\n";
+		assert.equal(args.length, varargs_point + 2, "Exactly one symbol may follow '&' in a varargs declaration.");
+		named = args.slice(1, varargs_point);
+		rest = args.slice(varargs_point + 1);
 	}
 
-	header = "function (" + named.join(", ") + ") {\n";
+	return {named: named, rest: rest};
+};
 
-	body = analyze.do_inner(
-		form.slice(2),
-		env,
-		function (x) { return "return " + x + ";"; }
-	).join(";\n");
+analyze.lambda = function (form, env) {
+	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
+	var args = form[1],
+		body = form.slice(2),
+		destructured = destructure_args(args),
+		lambda,
+		head, varargs_slice, body_str, tail;
 
-	tail = "\n}";
+	lambda = new Lambda(destructured.named, destructured.rest, form.slice(2), env);
 
-	return header + vararg_slice + body + tail;
+	return analyze.application(lambda, env);
 };
 
 analyze.sequence = function (forms, env, separator) {
@@ -246,14 +248,38 @@ primitives[new Symbol("throw")] = function (fn_args, env) {
 };
 
 analyze.application = function (form, env) {
-	var fn_name = form[0],
-		fn_args = form.slice(1),
+	var fn_name,
+		fn_args,
 		primitive,
 		constructor = /(.*)\.$/,
 		property_access = /^\.-(.*)/,
 		method_access = /^\.(.*)/,
-		match;
+		match,
+		lambda, head, varargs_slice, body, tail;
 
+	if (form instanceof Lambda) {
+		lambda = form;
+		head = "function (" + lambda.args.join(", ") + ") {\n";
+
+		if (typeof lambda.rest === 'undefined') {
+			varargs_slice = "";
+		} else {
+			varargs_slice = "var " + lambda.rest + " = Array.prototype.slice.call(arguments, " + lambda.args.length +");\n";
+		}
+
+		body = analyze.do_inner(
+			lambda.body,
+			env,
+			function (x) { return "return " + x + ";"; }
+		).join(";\n");
+
+		tail = "\n}";
+
+		return head + varargs_slice + body + tail;
+	}
+
+	fn_name = form[0];
+	fn_args = form.slice(1);
 	if (is_atom(fn_name)) {
 		// Interop.
 		match = constructor.exec(fn_name.name);
