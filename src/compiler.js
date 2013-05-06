@@ -221,14 +221,38 @@ primitives[new Symbol("throw")] = function (fn_args, env) {
 analyze.primitive = function (form, env) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
-		primitive;
+		primitive,
+		constructor = /(.*)\.$/,
+		property_access = /^\.-(.*)/,
+		method_access = /^\.(.*)/,
+		match;
 
 	if (is_atom(fn_name)) {
+		// Interop.
+		match = constructor.exec(fn_name.name);
+		if (match) { // TODO might move this to the symbol code...
+			return "new " + match[1] + "(" + analyze.sequence(fn_args, env, ", ") + ")";
+		}
+
+		match = property_access.exec(fn_name.name);
+		if (match) { // TODO might move this to the symbol code...
+			assert.equal(1, fn_args.length, "Invalid arguments to property access: " + fn_args);
+			return analyze(fn_args[0], env) + "." + match[1];
+		}
+
+		match = method_access.exec(fn_name.name);
+		if (match) { // TODO might move this to the symbol code...
+			assert.equal(true, fn_args.length >= 1, "Invalid arguments to method access: " + fn_args);
+			return analyze(fn_args[0], env) + "." + match[1] + "(" + analyze.sequence(fn_args.splice(1), env, ", ") + ")";
+		}
+
+		// Primitive.
 		primitive = primitives[fn_name];
 		if (typeof primitive !== "undefined") {
 			return primitive(fn_args, env);
 		}
 
+		// Fn. TODO Does this go away with real interop?
 		return fn_name + "(" + analyze.sequence(fn_args, env, ", ") + ")";
 	}
 
