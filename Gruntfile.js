@@ -16,9 +16,6 @@ module.exports = function(grunt) {
 		cafemocha: {
 			tests: {
 				src: 'test/**/*.js',
-				require: [
-					'should'
-				]
 			}
 		},
 		crisp: {
