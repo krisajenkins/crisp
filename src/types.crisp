@@ -10,6 +10,7 @@
 (set! Symbol.prototype.toString
       (fn []
         (+ "#" this.name)))
+(export Symbol)
 
 (def Keyword
   (fn [name]
@@ -23,3 +24,4 @@
 (set! Keyword.prototype.toString
       (fn []
         (+ ":" this.name)))
+(export Keyword)

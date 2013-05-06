@@ -125,7 +125,7 @@ analyze.def = function (form, env) {
 	var name = analyze(form[1], env),
 		value = analyze(form[2], env);
 
-	return "var " + name + " = " + value + ";\nexports." + name + " = " + name;
+	return "var " + name + " = " + value;
 };
 
 analyze.set = function (form, env) {
@@ -208,6 +208,11 @@ primitives[new Symbol("identical?")]	 = primitives.make_infix_function(" === ");
 primitives[new Symbol("not")] = function (fn_args, env) {
 	assert.equal(1, fn_args.length, "Invalid arguments to not: " + fn_args);
 	return "!" + analyze(fn_args[0], env);
+};
+primitives[new Symbol("export")] = function (fn_args, env) {
+	assert.equal(1, fn_args.length, "Invalid arguments to export: " + fn_args);
+	var name = analyze(fn_args[0], env);
+	return "exports." + name + " = " + name;
 };
 primitives[new Symbol("throw")] = function (fn_args, env) {
 	return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
