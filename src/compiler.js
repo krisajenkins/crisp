@@ -186,53 +186,41 @@ analyze.do = function (form, env) {
 	return analyze.do_inner(form.slice(1), env, function (x) { return x; }).join("");
 };
 
+var primitives = {};
+primitives.make_infix_function = function (operand_string, arity) {
+	return function (fn_args, env) {
+		if (typeof(arity) !== "undefined") {
+			assert.equal(arity, fn_args.length, "Invalid number of args.");
+		}
+		return "(" + analyze.sequence(fn_args, env, operand_string) + ")";
+	};
+};
+
+// TODO Right code, wrong place.
+primitives[new Symbol("+")]				 = primitives.make_infix_function(" + ");
+primitives[new Symbol("*")]				 = primitives.make_infix_function(" * ");
+primitives[new Symbol("=")]				 = primitives.make_infix_function(" === ");
+primitives[new Symbol("and")]			 = primitives.make_infix_function(" && ");
+primitives[new Symbol("or")]			 = primitives.make_infix_function(" || ");
+primitives[new Symbol("instanceof?")]	 = primitives.make_infix_function(" instanceof ", 2);
+primitives[new Symbol("identical?")]	 = primitives.make_infix_function(" === "); // TODO is this right?
+
+primitives[new Symbol("not")] = function (fn_args, env) {
+	assert.equal(1, fn_args.length, "Invalid arguments to not: " + fn_args);
+	return "!" + analyze(fn_args[0], env);
+};
+primitives[new Symbol("throw")] = function (fn_args, env) {
+	return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
+};
+
 analyze.primitive = function (form, env) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
-		bracket_statement,
-		infix_function,
-		make_infix_function,
-		lookup,
 		primitive,
 		newcont;
 
 	if (is_atom(fn_name)) {
-		bracket_statement = function (statement) {
-			return "(" + statement + ")";
-		};
-
-		make_infix_function = function (operand_string, arity) {
-			return function (fn_args, env) {
-				if (typeof(arity) !== "undefined") {
-					assert.equal(arity, fn_args.length, "Invalid number of args.");
-				}
-				return "(" + analyze.sequence(fn_args, env, operand_string) + ")";
-			};
-		};
-
-		infix_function = function (fn_args, env, operand_string) {
-			return "(" + analyze.sequence(fn_args, env, operand_string) + ")";
-		};
-
-		// TODO Right code, wrong place.
-		lookup = {};
-		lookup[new Symbol("+")]				 = make_infix_function(" + ");
-		lookup[new Symbol("*")]				 = make_infix_function(" * ");
-		lookup[new Symbol("=")]				 = make_infix_function(" === ");
-		lookup[new Symbol("and")]			 = make_infix_function(" && ");
-		lookup[new Symbol("or")]			 = make_infix_function(" || ");
-		lookup[new Symbol("instanceof?")]	 = make_infix_function(" instanceof ", 2);
-		lookup[new Symbol("identical?")]	 = make_infix_function(" === "); // TODO is this right?
-
-		lookup[new Symbol("not")] = function (fn_name, args) {
-			assert.equal(1, fn_args.length, "Invalid not form: " + form);
-			return "!" + analyze(fn_args[0], env);
-		};
-		lookup[new Symbol("throw")] = function (fn_name, args) {
-			return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
-		};
-
-		primitive = lookup[fn_name];
+		primitive = primitives[fn_name];
 		if (typeof primitive !== "undefined") {
 			return primitive(fn_args, env);
 		}
