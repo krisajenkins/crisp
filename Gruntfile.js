@@ -27,23 +27,46 @@ module.exports = function(grunt) {
 					expand: true,
 					cwd: 'src/',
 					src: '**/*.crisp',
-					dest: 'build/',
+					dest: 'lib/',
 					ext: '.js'
 				}]
 			}
+		},
+		copy: {
+			build: {
+				files: [{
+					expand: true,
+					cwd: 'src/',
+					src: '**/*.js',
+					dest: 'lib/'
+				}]
+			},
+			approve: {
+				files: [{
+					expand: true,
+					cwd: 'lib/',
+					src: '**/*.js',
+					dest: 'previous/'
+				}]
+			}
+		},
+		clean: {
+			build: ["lib/"]
 		}
 	});
 
 	// Load plugins.
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-cafe-mocha');
 	grunt.loadNpmTasks('grunt-beautify');
 
 	grunt.registerMultiTask('crisp', "Compile crisp files to JavaScript", function () {
-		grunt.config.requires('crisp.build');
-		var compiler = require('./lib/compiler');
+		var compiler = require('./previous/compiler');
 
 		grunt.log.writeln("Compiling crisps:");
+
 		this.files.forEach(function (file) {
 			if (file.src.length !== 1) {
 				grunt.fatal("More than one source file found. don't know why." + file.src);
@@ -58,5 +81,6 @@ module.exports = function(grunt) {
 	});
 
 	// Default task(s).
-	grunt.registerTask('default', ['cafemocha', 'crisp', 'uglify']);
+	grunt.registerTask('default', ['clean:build', 'copy:build', 'crisp', 'cafemocha']);
+	grunt.registerTask('approve', ['copy:approve']);
 };

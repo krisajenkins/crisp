@@ -286,18 +286,14 @@ String.prototype.repeat = function (n) {
 
 var usage = "USAGE TODO";
 
-var compile_io = function (input, output) {
-	var env = base_environment.extend();
+// TODO Make this asynchronous. (Easy, but making Grunt respect that is harder.)
+var compile_io = function (input, output, callback) {
+	var env = base_environment.extend(),
+		data = fs.readFileSync(input, {encoding: "utf-8"}),
+		compiled = compile(data, env),
+		string = compiled.join("\n");
 
-	fs.readFile(input, {encoding: "utf-8"}, function (error, data) {
-		if (error) { throw error; }
-		var compiled = compile(data, env),
-			string = compiled.join("\n");
-
-		fs.writeFile(output, string, function (error, data) {
-			if (error) { throw error; }
-		});
-	});
+	fs.writeFileSync(output, string);
 };
 exports.compile_io = compile_io;
 
@@ -306,7 +302,7 @@ var main = function () {
 	var input = process.argv[2],
 		output = process.argv[3];
 
-	compile_io(input, output);
+	compile_io(input, output, function () { console.log("Done"); });
 };
 
 if (require.main === module) {
