@@ -11,6 +11,15 @@ base_environment[new Symbol("nil")] = void(0);
 base_environment[new Symbol("true")] = true;
 base_environment[new Symbol("false")] = false;
 base_environment[new Symbol("=")] = equal;
+base_environment[new Symbol("typeof")] = function (arg) {
+	return typeof arg;
+};
+base_environment[new Symbol("nil?")] = function (arg) {
+	return typeof arg === "undefined";
+};
+base_environment[new Symbol("length")] = function (arg) {
+	return arg.length;
+};
 base_environment[new Symbol("not")] = function (arg) {
 	return ! arg;
 };

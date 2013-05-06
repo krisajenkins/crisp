@@ -28,7 +28,7 @@ var match_close_brace		= make_parser(/^\}/, 'CLOSE_BRACE');
 var match_number			= make_parser(/^-?\d+(\.\d+)?/, 'NUMBER');
 var match_string			= make_parser(/^"([^"]*)"/m, 'STRING');
 var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
-var match_symbol			= make_parser(/^[\w\._\/\-\+!=?\*]+/, 'SYMBOL');
+var match_symbol			= make_parser(/^[\w\._\/\-\+!=?&\*]+/, 'SYMBOL');
 var match_whitespace		= make_parser(/^\s+/, 'WHITESPACE');
 var match_quote				= make_parser(/^'/, 'QUOTE');
 var match_syntax_quote		= make_parser(/^`/, 'SYNTAX_QUOTE');

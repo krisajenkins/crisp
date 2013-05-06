@@ -33,8 +33,16 @@ var analyze = function (form) {
 			return analyze.if(form);
 		}
 
+		if (equal(form[0], new Symbol("do"))) {
+			return analyze.do(form);
+		}
+
 		if (equal(form[0], new Symbol("def"))) {
 			return analyze.def(form);
+		}
+
+		if (equal(form[0], new Symbol("apply"))) {
+			return analyze.apply(form);
 		}
 
 		if (equal(form[0], new Symbol("fn"))) {
@@ -48,7 +56,7 @@ var analyze = function (form) {
 		return analyze.application(form);
 	}
 
-	throw "Unhandled form: " + form;
+	throw new Error("Unhandled form: " + form);
 };
 
 analyze.self_evaluating = function (form) {
@@ -63,6 +71,24 @@ analyze.symbol = function (form) {
 	};
 };
 
+analyze.do = function (form) {
+	var analyzed = [], i;
+
+	for (i = 1; i < form.length; i = i + 1) {
+		analyzed.push(analyze(form[i]));
+	}
+
+	return function (env) {
+		var i, result;
+
+		for (i = 0; i < analyzed.length; i = i + 1) {
+			result = analyzed[i](env);
+		}
+
+		return result;
+	};
+};
+
 analyze.quote = function (form) {
 	assert.equal(form.length, 2, "Invalid quote form: " + form);
 	return function (env) {
@@ -71,7 +97,7 @@ analyze.quote = function (form) {
 };
 
 var syntax_expand = function (form, env) {
-	var result, i, expanded, analysis;
+	var result, i, expanded, analysis, subform;
 
 	if (is_atom(form)) {
 		return form;
@@ -89,8 +115,21 @@ var syntax_expand = function (form, env) {
 
 	result = [];
 	for (i = 0; i < form.length; i = i + 1) {
-		expanded = syntax_expand(form[i], env);
-		result.push(expanded);
+		subform = form[i];
+
+		if (
+			!is_atom(subform)
+			&&
+			subform.length === 2
+			&&
+			equal(subform[0], new Symbol("unquote-splicing"))
+		) {
+			analysis = analyze(subform[1]);
+			result = result.concat(analysis(env));
+		} else {
+			expanded = syntax_expand(subform, env);
+			result.push(expanded);
+		}
 	}
 
 	return result;
@@ -108,6 +147,7 @@ analyze.if = function (form) {
 	assert.equal(true, 3 <= form.length <= 4, "Invalid if form: " + form);
 	var analyzed_test, analyzed_then, analyzed_else;
 
+	// TODO can go when we get multiargs.
 	if (form.length === 3) {
 		form.push(new Symbol("nil"));
 	}
@@ -135,27 +175,65 @@ analyze.def = function (form) {
 	};
 };
 
-analyze.lambda = function (form) {
-	assert.equal(3, form.length, "Invalid fn form: " + form);
-	var args = form[1].slice(1), // TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
-		body = form[2],
-		analyzed_args = analyze(args),
-		analyzed_body = analyze(body);
+analyze.apply = function (form) {
+	assert.equal(3, form.length, "Invalid apply form: " + form);
+	var analyzed_arg = analyze(form[2]);
 
 	return function (env) {
-		return new Lambda(args, analyzed_body, env);
+		var args = analyzed_arg(env);
+
+		args.unshift(form[1]);
+		return analyze.application(args)(env);
 	};
+};
+
+var destructure_args = function (args) {
+	var varargs_point, varargs_symbol, named, rest, i,
+		varargs_symbol = new Symbol("&");
+
+	// TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
+	assert.equal(true, equal(new Symbol("vec"), args[0]), "Invalid first arg: " + args[0]);
+
+	varargs_point = -1;
+	for (i = 0; i < args.length; i = i + 1) {
+		if (varargs_symbol.equal(args[i])) {
+			varargs_point = i;
+		}
+	}
+
+	if (varargs_point === -1) {
+		named = args.slice(1);
+		rest = undefined;
+	} else {
+		assert.equal(args.length, varargs_point + 2, "Exactly one symbol may follow '&' in a varargs declaration.");
+		named = args.slice(1, varargs_point);
+		rest = args.slice(varargs_point + 1);
+	}
+
+	return {named: named, rest: rest};
+};
+
+analyze.lambda = function (form) {
+	assert.equal(3, form.length, "Invalid fn form: " + form);
+	var args = form[1],
+		body = form[2],
+		analyzed_body = analyze(body),
+		destructured = destructure_args(args);
+
+	return function (env) {
+		return new Lambda(destructured.named, destructured.rest, analyzed_body, env);
+	} ;
 };
 
 analyze.macro = function (form) {
 	assert.equal(3, form.length, "Invalid macro form: " + form);
-	var args = form[1].slice(1), // TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
+	var args = form[1],
 		body = form[2],
-		analyzed_args = analyze(args),
-		analyzed_body = analyze(body);
+		analyzed_body = analyze(body),
+		destructured = destructure_args(args);
 
 	return function (env) {
-		return new Macro(args, analyzed_body, env);
+		return new Macro(destructured.named, destructured.rest, analyzed_body, env);
 	};
 };
 
@@ -183,10 +261,18 @@ analyze.application = function (form) {
 			fn instanceof Macro
 		) {
 			sub_env = fn.env.extend();
-			assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with invalid number of arguments: " + fn.args.length + ". Expected " + args.length + ":::" + fn.args);
+
+			if (typeof fn.rest === "undefined") {
+				assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + ". Got " + args.length + ".");
+			} else {
+				assert.equal(true, fn.args.length <= args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + "+. Got " + args.length + "." + fn.args);
+			}
 
 			for (i = 0; i < fn.args.length; i = i + 1) {
 				sub_env[fn.args[i]] = args[i];
+			}
+			if (typeof fn.rest !== "undefined" && args.length > fn.args.length) {
+				sub_env[fn.rest] = args.slice(fn.args.length);
 			}
 
 			if (fn instanceof Macro) {

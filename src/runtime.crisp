@@ -29,8 +29,9 @@
 (export equal)
 
 (def Lambda
-  (fn [args body env]
+  (fn [args rest body env]
     (set! this.args args)
+    (set! this.rest rest)
     (set! this.body body)
     (set! this.env env)
     this))
@@ -41,8 +42,9 @@
 (export Lambda)
 
 (def Macro
-  (fn [args body env]
+  (fn [args rest body env]
     (set! this.args args)
+    (set! this.rest rest)
     (set! this.body body)
     (set! this.env env)
     this))

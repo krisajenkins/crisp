@@ -85,9 +85,48 @@ describe('interpreter', function () {
 		assert.equal(evaluate("((if true  double triple) 8)", env), 16);
 		assert.equal(evaluate("((if false double triple) 8)", env), 24);
 	});
+
+	it('Apply', function () {
+		assert.equal(evaluate("(+ 5 3)", env), 8);
+		assert.equal(evaluate("(apply + '(5 3))", env), 8);
+	});
+
+	it('Argument count', function () {
+		evaluate("(def double (fn [x] (* 2 x)))", env);
+		assert.equal(evaluate("(double 3)", env), 6);
+		assert.throws(
+			function () {
+				evaluate("(double)", env);
+			}
+		);
+		assert.throws(
+			function () {
+				evaluate("(double 1 2)", env);
+			}
+		);
+	});
+
+	it('Varargs', function () {
+		evaluate("(def double (fn [x & xs] (* 2 x)))", env);
+		assert.equal(evaluate("(double 3)", env), 6);
+		assert.equal(evaluate("(double 7 5 8)", env), 14);
+
+		assert.equal(evaluate("(nil? nil)", env), true);
+		assert.equal(evaluate("(nil? 5)", env), false);
+
+		evaluate("(def count (fn [x & xs] (if (nil? xs) 1 (+ 1 (apply count xs)))))", env);
+		assert.equal(evaluate("(count 1)", env), 1);
+		assert.equal(evaluate("(count 1 2 3)", env), 3);
+	});
+
 	it('Simple Macro', function () {
-		evaluate("(def unless (macro [test form] `(if (not ~test) ~form nil)))", env);
+		evaluate("(def unless (macro [test form] `(if (not ~test) ~form)))", env);
 		assert.equal(evaluate("(unless false 1)", env), 1);
 		assert.equal(evaluate("(unless true 1)", env), undefined);
+	});
+	it('Varargs Macro', function () {
+		evaluate("(def when (macro [test & body] `(if ~test (do ~@body))))", env);
+		assert.equal(evaluate("(when true 5 4 3)", env), 3);
+		assert.equal(evaluate("(when false 5 4 3)", env), undefined);
 	});
 });

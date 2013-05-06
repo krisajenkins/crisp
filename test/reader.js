@@ -17,7 +17,7 @@ describe('reader', function () {
 		assert.deepEqual(read_string("somevar").result, new Symbol("somevar"));
 		assert.deepEqual(read_string("+").result, new Symbol("+"));
 		assert.deepEqual(read_string("list?").result, new Symbol("list?"));
-		assert.deepEqual(read_string("tom.dick_and-harry").result, new Symbol("tom.dick_and-harry"));
+		assert.deepEqual(read_string("tom.dick_&-harry").result, new Symbol("tom.dick_&-harry"));
 	});
 	it('Strings', function () {
 		assert.equal(read_string('"test"').result, "test");

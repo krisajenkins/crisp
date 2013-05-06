@@ -13,25 +13,25 @@ return !(form instanceof Array);
 exports.is_atom = is_atom;
 
 var is_self_evaluating = function (form) {
-return ((typeof(form) === "boolean") || (typeof(form) === "number") || (typeof(form) === "string"));
+return ((typeof form === "boolean") || (typeof form === "number") || (typeof form === "string"));
 };
 
 exports.is_self_evaluating = is_self_evaluating;
 
 var equal = function (x, y) {
-return (typeof(x) === "undefined") ? 
-(typeof(y) === "undefined")
+return (typeof x === "undefined") ? 
+(typeof y === "undefined")
  : 
-(typeof(y) === "undefined") ? 
+(typeof y === "undefined") ? 
 false
  : 
 x.equal ? 
-x.equal(x, y)
+x.equal(y)
  : 
 y.equal ? 
-y.equal(y, x)
+y.equal(x)
  : 
-(typeof(x) === typeof(y)) ? 
+(typeof x === typeof y) ? 
 (x === y)
  : 
 (function () { throw "Cannot determine equality for objects " + x + " and " + y; }());
@@ -39,8 +39,9 @@ y.equal(y, x)
 
 exports.equal = equal;
 
-var Lambda = function (args, body, env) {
+var Lambda = function (args, rest, body, env) {
 this.args = args;
+this.rest = rest;
 this.body = body;
 this.env = env;
 return this;
@@ -52,8 +53,9 @@ return "[ Lambda ]";
 
 exports.Lambda = Lambda;
 
-var Macro = function (args, body, env) {
+var Macro = function (args, rest, body, env) {
 this.args = args;
+this.rest = rest;
 this.body = body;
 this.env = env;
 return this;

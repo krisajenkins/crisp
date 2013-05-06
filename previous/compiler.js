@@ -219,6 +219,11 @@ primitives[new Symbol("export")] = function (fn_args, env) {
 	var name = analyze(fn_args[0], env);
 	return "exports." + name + " = " + name;
 };
+primitives[new Symbol("typeof")] = function (fn_args, env) {
+	assert.equal(1, fn_args.length, "Invalid arguments to typeof: " + fn_args);
+	var name = analyze(fn_args[0], env);
+	return "typeof " + analyze(fn_args[0], env);
+};
 primitives[new Symbol("throw")] = function (fn_args, env) {
 	return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
 };
@@ -247,8 +252,8 @@ analyze.application = function (form, env) {
 
 		match = method_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
-			assert.equal(1, fn_args.length, "Invalid arguments to method access: " + fn_args);
-			return "(" + analyze(fn_args[0], env) + "." + match[1] + "()";
+			assert.equal(true, fn_args.length >= 1, "Invalid arguments to method access: " + fn_args);
+			return analyze(fn_args[0], env) + "." + match[1] + "(" + analyze.sequence(fn_args.splice(1), env, ", ") + ")";
 		}
 
 		// Primitive.
@@ -258,6 +263,7 @@ analyze.application = function (form, env) {
 		}
 
 		// Fn. TODO Does this go away with real interop?
+		console.log("WARNING");
 		return fn_name + "(" + analyze.sequence(fn_args, env, ", ") + ")";
 	}
 
