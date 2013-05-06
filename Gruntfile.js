@@ -72,8 +72,9 @@ module.exports = function(grunt) {
 				dest = file.dest;
 
 			try {
-				grunt.log.writeln("\tCompiling", src, "to", dest);
+				grunt.log.write("\tCompiling", src, "to", dest);
 				compiler.compile_io(src, dest);
+				grunt.log.writeln("\t...Done.");
 			} catch (e) {
 				grunt.fail.fatal(e);
 			}
