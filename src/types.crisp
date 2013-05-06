@@ -10,7 +10,7 @@
              (identical? this.name other.name))))
 (set! Symbol.prototype.toString
       (fn []
-        (+ "#" this.name)))
+        this.name))
 (export Symbol)
 
 (def Keyword

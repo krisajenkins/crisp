@@ -14,7 +14,7 @@ return ((this.type === other.type) && (this.name === other.name));
 };
 
 Symbol.prototype.toString = function () {
-return ("#" + this.name);
+return this.name;
 };
 
 exports.Symbol = Symbol;

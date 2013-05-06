@@ -15,9 +15,9 @@ var is_self_printing = function (form) {
 };
 
 // TODO redefs!
-Symbol.prototype.toString = function () {
-	return this.name;
-};
+// Symbol.prototype.toString = function () {
+// 	return this.name;
+// };
 
 // TODO Duplication of interpreter code.
 var analyze = function (form, env) {
@@ -39,7 +39,6 @@ var analyze = function (form, env) {
 			return analyze.string(form, env);
 		}
 	} else {
-		// TODO
 		if (equal(form[0], new Symbol("quote"))) {
 			return analyze.quote(form, env);
 		}
@@ -203,7 +202,9 @@ primitives.make_infix_function = function (operand_string, arity) {
 
 // TODO Right code, wrong place.
 primitives[new Symbol("+")]				 = primitives.make_infix_function(" + ");
+primitives[new Symbol("-")]				 = primitives.make_infix_function(" - ");
 primitives[new Symbol("*")]				 = primitives.make_infix_function(" * ");
+primitives[new Symbol("/")]				 = primitives.make_infix_function(" / ");
 primitives[new Symbol("=")]				 = primitives.make_infix_function(" === ");
 primitives[new Symbol("and")]			 = primitives.make_infix_function(" && ");
 primitives[new Symbol("or")]			 = primitives.make_infix_function(" || ");
@@ -263,7 +264,7 @@ analyze.application = function (form, env) {
 		}
 
 		// Fn. TODO Does this go away with real interop?
-		console.log("WARNING");
+		console.log("WARNING", form);
 		return fn_name + "(" + analyze.sequence(fn_args, env, ", ") + ")";
 	}
 
@@ -312,15 +313,23 @@ String.prototype.repeat = function (n) {
 };
 
 var usage = "USAGE TODO";
+var compile_string = function (input) {
+	var env, compiled, output;
+
+	env = base_environment.extend();
+	compiled = compile(input, env);
+	output = compiled.join("\n");
+
+	return output;
+};
+exports.compile_string = compile_string;
 
 // TODO Make this asynchronous. (Easy, but making Grunt respect that is harder.)
 var compile_io = function (input, output, callback) {
-	var env = base_environment.extend(),
-		data = fs.readFileSync(input, {encoding: "utf-8"}),
-		compiled = compile(data, env),
-		string = compiled.join("\n");
+	var data = fs.readFileSync(input, {encoding: "utf-8"}),
+		compiled = compile_string(data);
 
-	fs.writeFileSync(output, string);
+	fs.writeFileSync(output, compiled);
 };
 exports.compile_io = compile_io;
 
