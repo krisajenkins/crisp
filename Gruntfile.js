@@ -23,7 +23,7 @@ module.exports = function(grunt) {
 				files: [{
 					expand: true,
 					cwd: 'src/',
-					src: '**/*.crisp',
+					src: ['**/*.crisp'],
 					dest: 'lib/',
 					ext: '.js'
 				}]
@@ -63,7 +63,6 @@ module.exports = function(grunt) {
 		var compiler = require('./previous/compiler');
 
 		grunt.log.writeln("Compiling crisps:");
-
 		this.files.forEach(function (file) {
 			if (file.src.length !== 1) {
 				grunt.fatal("More than one source file found. don't know why." + file.src);
@@ -72,12 +71,18 @@ module.exports = function(grunt) {
 			var src = file.src[0],
 				dest = file.dest;
 
-			grunt.log.writeln("\tCompiling", src, "to", dest);
-			compiler.compile_io(src, dest);
+			try {
+				grunt.log.writeln("\tCompiling", src, "to", dest);
+				compiler.compile_io(src, dest);
+			} catch (e) {
+				grunt.fail.fatal(e);
+			}
 		});
 	});
 
 	// Default task(s).
-	grunt.registerTask('default', ['clean:build', 'copy:build', 'crisp', 'cafemocha']);
+	grunt.registerTask('compile', ['clean:build', 'copy:build', 'crisp']);
+	grunt.registerTask('test', ['cafemocha']);
+	grunt.registerTask('default', ['compile', 'test']);
 	grunt.registerTask('approve', ['copy:approve']);
 };
