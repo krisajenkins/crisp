@@ -265,7 +265,7 @@ exports.compile = compile;
 
 String.prototype.repeat = function (n) {
 	var result = "", i;
-	for (i = 0; i < n; i++) {
+	for (i = 0; i < n; i = i + 1) {
 		result = result.concat(this);
 	}
 	return result;
