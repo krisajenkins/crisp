@@ -138,21 +138,42 @@ analyze.set = function (form, env) {
 
 analyze.lambda = function (form, env) {
 	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
-	var arglist, statement;
+	var arglist, varargs_point, varargs_symbol = new Symbol("&"), i,
+		arg, named, rest,
+		header, tail, vararg_slice, body;
 
-	arglist = form[1].slice(1).join(", ");
+	// TODO We're popping 'vec'.
+	arglist = form[1].slice(1);
 
-	if (form.length === 2) {
-		return "function (" + arglist + ") {}";
+	// Look for varargs.
+	varargs_point = -1;
+	for (i = 0; i < arglist.length; i = i + 1) {
+		arg = arglist[i];
+		if (equal(arg, varargs_symbol)) {
+			varargs_point = i;
+			assert.equal(varargs_point + 2, arglist.length, "Only one argument may appear after the & in a varargs declaration.");
+		}
 	}
 
-	statement = analyze.do_inner(
+	if (varargs_point === -1) {
+		named = arglist;
+		vararg_slice = "";
+	} else {
+		named = arglist.slice(0, varargs_point);
+		vararg_slice = "var " + arglist[varargs_point + 1] + " = Array.prototype.slice.call(arguments, " + varargs_point +");\n";
+	}
+
+	header = "function (" + named.join(", ") + ") {\n";
+
+	body = analyze.do_inner(
 		form.slice(2),
 		env,
 		function (x) { return "return " + x + ";"; }
 	).join(";\n");
 
-	return "function (" + arglist + ") {\n" + statement + "\n}";
+	tail = "\n}";
+
+	return header + vararg_slice + body + tail;
 };
 
 analyze.sequence = function (forms, env, separator) {
@@ -249,7 +270,7 @@ analyze.application = function (form, env) {
 		match = method_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
 			assert.equal(true, fn_args.length >= 1, "Invalid arguments to method access: " + fn_args);
-			return analyze(fn_args[0], env) + "." + match[1] + "(" + analyze.sequence(fn_args.splice(1), env, ", ") + ")";
+			return analyze(fn_args[0], env) + "." + match[1] + "(" + analyze.sequence(fn_args.slice(1), env, ", ") + ")";
 		}
 
 		// Primitive.

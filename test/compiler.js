@@ -9,14 +9,19 @@ var runIn = function (source, context) {
 	var compiled, result;
 
 	compiled = compile_string(source);
-	result = vm.runInNewContext(compiled, context);
+
+	try {
+		result = vm.runInNewContext(compiled, context);
+	} catch (e) {
+		throw e;
+	}
 
 	return result;
 };
 
 var compilesTo = function(source, expected, context, message) {
 	var result = runIn(source, context);
-	assert.equal(result, expected, message);
+	assert.deepEqual(result, expected, message);
 };
 
 describe('compiler', function () {
@@ -105,6 +110,11 @@ describe('compiler', function () {
 		compilesTo("((if false double triple) 8)", 24, context);
 	});
 
+	it('fn bodies', function () {
+		runIn("(def Person (fn [name age] (set! this.name name) (set! this.age age) this))", context);
+		compilesTo('(Person. "kris" 35)', {name: "kris", age: 35}, context);
+	});
+
 	/* TODO
 	it('Apply', function () {
 		compilesTo("(+ 5 3)", 8, {});
@@ -129,20 +139,13 @@ describe('compiler', function () {
 	});
 	*/
 
-	/* TODO
 	it('Varargs', function () {
-		evaluate("(def double (fn [x & xs] (* 2 x)))", env);
-		assert.equal(evaluate("(double 3)", env), 6);
-		assert.equal(evaluate("(double 7 5 8)", env), 14);
-
-		assert.equal(evaluate("(nil? nil)", env), true);
-		assert.equal(evaluate("(nil? 5)", env), false);
-
-		evaluate("(def count (fn [x & xs] (if (nil? xs) 1 (+ 1 (apply count xs)))))", env);
-		assert.equal(evaluate("(count 1)", env), 1);
-		assert.equal(evaluate("(count 1 2 3)", env), 3);
+		compilesTo("(def thing_a (fn [x]))           (thing_a 5)", undefined, {});
+		compilesTo("(def thing_b (fn [x] x))         (thing_b 5)", 5, {});
+		compilesTo("(def thing_c (fn [x & xs] x))    (thing_c 5)", 5, {});
+		compilesTo("(def thing_d (fn [x & xs] xs))   (thing_d 3 5)", [5], {});
+		compilesTo("(def thing_e (fn [x y & xs] xs)) (thing_e 1 3 5)", [5], {});
 	});
-	*/
 
 	/* TODO
 	it('Simple Macro', function () {
