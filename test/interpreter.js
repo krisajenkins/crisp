@@ -3,8 +3,8 @@
 
 var assert = require('assert');
 var evaluate = require('../lib/interpreter').evaluate;
-var Symbol = require('../lib/runtime').Symbol;
-var Keyword = require('../lib/runtime').Keyword;
+var Symbol = require('../lib/types').Symbol;
+var Keyword = require('../lib/types').Keyword;
 var base_environment = require('../lib/runtime').base_environment;
 
 describe('interpreter', function () {

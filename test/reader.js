@@ -3,8 +3,8 @@
 
 var assert = require('assert');
 var read_string = require('../lib/reader').read_string;
-var Symbol = require('../lib/runtime').Symbol;
-var Keyword = require('../lib/runtime').Keyword;
+var Symbol = require('../lib/types').Symbol;
+var Keyword = require('../lib/types').Keyword;
 
 describe('reader', function () {
 	it('Numbers', function () {

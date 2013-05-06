@@ -1,8 +1,8 @@
 "use strict";
 
 var assert = require('assert');
-var Symbol = require('./runtime').Symbol;
-var Keyword = require('./runtime').Keyword;
+var Symbol = require('./types').Symbol;
+var Keyword = require('./types').Keyword;
 var Environment = require('./runtime').Environment;
 var equal = require('./runtime').equal;
 var read_string = require('./reader').read_string;

@@ -2,9 +2,9 @@
 "use strict";
 
 var assert = require('assert');
+var Symbol = require('../lib/types').Symbol;
+var Keyword = require('../lib/types').Keyword;
 var equal = require('../lib/runtime').equal;
-var Symbol = require('../lib/runtime').Symbol;
-var Keyword = require('../lib/runtime').Keyword;
 var Environment = require('../lib/runtime').Environment;
 
 describe('Equality', function () {

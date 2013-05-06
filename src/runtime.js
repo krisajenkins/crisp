@@ -1,5 +1,8 @@
 "use strict";
 
+var Symbol = require('./types').Symbol;
+var Keyword = require('./types').Keyword;
+
 var is_atom = function (form) {
 	return !(form instanceof Array);
 };
@@ -14,33 +17,6 @@ var is_self_evaluating = function (form) {
 };
 exports.is_self_evaluating = is_self_evaluating;
 
-var Symbol = function (name) {
-	this.name = name;
-};
-exports.Symbol = Symbol;
-Symbol.prototype.type = "crisp.runtime/symbol";
-Symbol.prototype.equal = function(x, y) {
-	return (x.type === y.type)
-		&&
-		(x.name === y.name);
-};
-Symbol.prototype.toString = function () {
-	return "#" + this.name;
-};
-
-var Keyword = function (name) {
-	this.name = name;
-};
-exports.Keyword = Keyword;
-Keyword.prototype.type = "crisp.runtime/keyword";
-Keyword.prototype.equal = function(x, y) {
-	return (x.type === y.type)
-		&&
-		(x.name === y.name);
-};
-Keyword.prototype.toString = function () {
-	return ":" + this.name;
-};
 
 var Lambda = function (args, body, env) {
 	this.args = args;
