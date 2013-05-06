@@ -89,6 +89,11 @@ analyze.symbol = function (form, env) {
 	return name;
 };
 
+analyze.quote = function (form, env) {
+	assert.equal(2, form.length, "Invalid quote form: " + form);
+	return form[1];
+};
+
 analyze.keyword = function (form, env) {
 	return '"' + form.name + '"';
 };
