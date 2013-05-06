@@ -5,9 +5,9 @@
 
 (set! Symbol.prototype.type "crisp.types/symbol")
 (set! Symbol.prototype.equal
-      (fn [x y]
-        (and (identical? x.type y.type)
-             (identical? x.name y.name))))
+      (fn [other]
+        (and (identical? this.type other.type)
+             (identical? this.name other.name))))
 (set! Symbol.prototype.toString
       (fn []
         (+ "#" this.name)))
@@ -20,9 +20,9 @@
 
 (set! Keyword.prototype.type "crisp.types/keyword")
 (set! Keyword.prototype.equal
-      (fn [x y]
-        (and (identical? x.type y.type)
-             (identical? x.name y.name))))
+      (fn [other]
+        (and (identical? this.type other.type)
+             (identical? this.name other.name))))
 (set! Keyword.prototype.toString
       (fn []
         (+ ":" this.name)))

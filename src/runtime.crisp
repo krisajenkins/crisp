@@ -19,10 +19,10 @@
       (= (typeof y) "undefined")
       (if (= (typeof y) "undefined")
         false
-        (if x.equal
-          (x.equal x y)
-          (if y.equal
-            (y.equal y x)
+        (if (.-equal x)
+          (.equal x y)
+          (if (.-equal y)
+            (.equal y x)
             (if (identical? (typeof x) (typeof y))
               (= x y)
               (throw "Cannot determine equality for objects " x " and " y))))))))
