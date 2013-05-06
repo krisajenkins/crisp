@@ -1,0 +1,25 @@
+(def Symbol
+  (fn [name]
+    (set! this.name name)))
+
+(set! Symbol.prototype.type "crisp.types/symbol")
+(set! Symbol.prototype.equal
+      (fn [x y]
+        (and (identical? x.type y.type)
+             (identical? x.name y.name))))
+(set! Symbol.prototype.toString
+      (fn []
+        (+ "#" this.name)))
+
+(def Keyword
+  (fn [name]
+    (set! this.name name)))
+
+(set! Keyword.prototype.type "crisp.types/keyword")
+(set! Keyword.prototype.equal
+      (fn [x y]
+        (and (identical? x.type y.type)
+             (identical? x.name y.name))))
+(set! Keyword.prototype.toString
+      (fn []
+        (+ ":" this.name)))
