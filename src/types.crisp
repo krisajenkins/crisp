@@ -1,6 +1,7 @@
 (def Symbol
   (fn [name]
-    (set! this.name name)))
+    (set! this.name name)
+	this))
 
 (set! Symbol.prototype.type "crisp.types/symbol")
 (set! Symbol.prototype.equal
@@ -14,7 +15,8 @@
 
 (def Keyword
   (fn [name]
-    (set! this.name name)))
+    (set! this.name name)
+	this))
 
 (set! Keyword.prototype.type "crisp.types/keyword")
 (set! Keyword.prototype.equal

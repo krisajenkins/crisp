@@ -1,7 +1,7 @@
 "use strict";
 
-var Symbol = require('./runtime').Symbol;
-var Keyword = require('./runtime').Keyword;
+var Symbol = require('./types').Symbol;
+var Keyword = require('./types').Keyword;
 
 function make_parser(regexp, type) {
 	return function (string) {
