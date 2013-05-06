@@ -22,7 +22,7 @@ module.exports = function(grunt) {
 		}
 	});
 
-	// Load the plugin that provides the "uglify" task.
+	// Load plugins.
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-cafe-mocha');
 	grunt.loadNpmTasks('grunt-beautify');
