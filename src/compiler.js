@@ -219,6 +219,11 @@ primitives[new Symbol("export")] = function (fn_args, env) {
 	var name = analyze(fn_args[0], env);
 	return "exports." + name + " = " + name;
 };
+primitives[new Symbol("typeof")] = function (fn_args, env) {
+	assert.equal(1, fn_args.length, "Invalid arguments to typeof: " + fn_args);
+	var name = analyze(fn_args[0], env);
+	return "typeof " + analyze(fn_args[0], env);
+};
 primitives[new Symbol("throw")] = function (fn_args, env) {
 	return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
 };
