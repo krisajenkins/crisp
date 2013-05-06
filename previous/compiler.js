@@ -64,7 +64,7 @@ var analyze = function (form, env) {
 			return analyze.lambda(form, env);
 		}
 
-		return analyze.primitive(form, env);
+		return analyze.application(form, env);
 	}
 
 	throw "Unhandled form: " + form;
@@ -223,7 +223,7 @@ primitives[new Symbol("throw")] = function (fn_args, env) {
 	return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
 };
 
-analyze.primitive = function (form, env) {
+analyze.application = function (form, env) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
 		primitive,
