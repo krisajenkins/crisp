@@ -216,8 +216,7 @@ primitives[new Symbol("throw")] = function (fn_args, env) {
 analyze.primitive = function (form, env) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
-		primitive,
-		newcont;
+		primitive;
 
 	if (is_atom(fn_name)) {
 		primitive = primitives[fn_name];
