@@ -128,4 +128,4 @@ base_environment[new Symbol("/")] = function (head) {
 };
 base_environment[new Symbol("vec")] = function () {
 	return arguments;
-}
+};
