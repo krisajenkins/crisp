@@ -86,6 +86,13 @@ describe('interpreter', function () {
 		assert.equal(evaluate("((if false double triple) 8)", env), 24);
 	});
 
+	it('Do', function () {
+		assert.equal(evaluate("(do)", env), undefined);
+		assert.equal(evaluate("(do 5)", env), 5);
+		assert.equal(evaluate('(do (def name "test") 5)', env), 5);
+		assert.equal(evaluate("name", env), "test");
+	});
+
 	it('Apply', function () {
 		assert.equal(evaluate("(+ 5 3)", env), 8);
 		assert.equal(evaluate("(apply + '(5 3))", env), 8);

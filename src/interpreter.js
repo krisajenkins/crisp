@@ -237,33 +237,55 @@ analyze.macro = function (form) {
 	};
 };
 
+Environment.prototype.extend_by = function (callee, args, rest, values) {
+	var i,
+		sub_env = this.extend();
+
+	if (typeof rest === "undefined") {
+		assert.equal(args.length, values.length, "Callee " + callee + " called with the wrong number of arguments, Expected " + args.length + ". Got " + values.length + ".");
+	} else {
+		assert.equal(true, args.length <= values.length, "Callee " + callee + " called with the wrong number of arguments, Expected " + args.length + "+. Got " + values.length + ".");
+	}
+
+	for (i = 0; i < args.length; i = i + 1) {
+		sub_env[args[i]] = values[i];
+	}
+	if (typeof rest !== "undefined" && values.length > args.length) {
+		sub_env[rest] = values.slice(args.length);
+	}
+
+	return sub_env;
+};
+
 var handle_complex = function(fn, fn_name, args, env) {
 	var i,
 		expanded_code,
 		analysis,
-		sub_env = fn.env.extend();
+		sub_env;
 
-	if (typeof fn.rest === "undefined") {
-		assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + ". Got " + args.length + ".");
-	} else {
-		assert.equal(true, fn.args.length <= args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + "+. Got " + args.length + "." + fn.args);
-	}
+	assert.equal(
+		true,
+		(
+			fn instanceof Lambda
+			||
+			fn instanceof Macro
+		),
+		"Internal error - expecting Lambda or Macro. Got: " + fn
+	);
 
-	for (i = 0; i < fn.args.length; i = i + 1) {
-		sub_env[fn.args[i]] = args[i];
-	}
-	if (typeof fn.rest !== "undefined" && args.length > fn.args.length) {
-		sub_env[fn.rest] = args.slice(fn.args.length);
-	}
+	sub_env = fn.env.extend_by(fn_name, fn.args, fn.rest, args);
 
 	if (fn instanceof Macro) {
 		expanded_code = fn.body(sub_env);
 		analysis = analyze(expanded_code);
-		return analysis(env);
+		return analysis;
 	}
 
-	return fn.body(sub_env);
+	return function (env) {
+		return fn.body(sub_env);
+	};
 };
+exports.handle_complex = handle_complex;
 
 analyze.application = function (form) {
 	var fn_name = form[0],
@@ -288,7 +310,8 @@ analyze.application = function (form) {
 			||
 			fn instanceof Macro
 		) {
-			return handle_complex(fn, fn_name, args, env);
+			var expanded = handle_complex(fn, fn_name, args, env);
+			return expanded(env);
 		}
 
 		try {
@@ -298,6 +321,7 @@ analyze.application = function (form) {
 		}
 	};
 };
+exports.analyze = analyze;
 
 var evaluate = function (string, env) {
 	var form, analyzed, result;

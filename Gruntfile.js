@@ -64,7 +64,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-beautify');
 
 	grunt.registerMultiTask('crisp', "Compile crisp files to JavaScript", function () {
-		var compiler = require('./previous/compiler');
+		var compiler = require('./previous/compiler'),
+			base_environment = require('./previous/baseenv').base_environment,
+			env = base_environment.extend();
 
 		grunt.log.writeln("Compiling crisps:");
 		this.files.forEach(function (file) {
@@ -77,7 +79,7 @@ module.exports = function(grunt) {
 
 			try {
 				grunt.log.write("\tCompiling", src, "to", dest);
-				compiler.compile_io(src, dest);
+				compiler.compile_io(src, dest, env);
 				grunt.log.writeln("\t...Done.");
 			} catch (e) {
 				grunt.fail.fatal(e);

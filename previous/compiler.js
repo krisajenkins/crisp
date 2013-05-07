@@ -1,7 +1,11 @@
 "use strict";
 
+var util = require('util');
+var format = require('util').format;
+var inspect = require('util').inspect;
 var assert = require('assert');
 var Symbol = require('./types').Symbol;
+var interpreter = require('./interpreter');
 var Keyword = require('./types').Keyword;
 var Environment = require('./runtime').Environment;
 var Lambda = require('./runtime').Lambda;
@@ -40,6 +44,10 @@ var analyze = function (form, env) {
 			return analyze.quote(form, env);
 		}
 
+		if (equal(form[0], new Symbol("syntax-quote"))) {
+			return analyze.syntax_quote(form, env);
+		}
+
 		if (equal(form[0], new Symbol("if"))) {
 			return analyze.if(form, env);
 		}
@@ -58,6 +66,10 @@ var analyze = function (form, env) {
 
 		if (equal(form[0], new Symbol("fn"))) {
 			return analyze.lambda(form, env);
+		}
+
+		if (equal(form[0], new Symbol("macro"))) {
+			return analyze.macro(form, env);
 		}
 
 		return analyze.application(form, env);
@@ -88,6 +100,49 @@ analyze.symbol = function (form, env) {
 analyze.quote = function (form, env) {
 	assert.equal(2, form.length, "Invalid quote form: " + form);
 	return form[1];
+};
+
+var syntax_expand = function (form, env) {
+	var result, i, expanded, analysis, subform;
+
+	if (is_atom(form)) {
+		return form;
+	}
+
+	if (
+		form.length === 2
+		&&
+		equal(form[0], new Symbol("unquote"))
+	) {
+		return analyze(form[1], env);
+	}
+
+	result = [];
+	for (i = 0; i < form.length; i = i + 1) {
+		subform = form[i];
+
+		if (
+			!is_atom(subform)
+			&&
+			subform.length === 2
+			&&
+			equal(subform[0], new Symbol("unquote-splicing"))
+		) {
+			analysis = analyze(subform[1], env);
+			result = result.concat(analysis);
+		} else {
+			expanded = syntax_expand(subform, env);
+			result.push(expanded);
+		}
+	}
+
+	return result;
+};
+
+analyze.syntax_quote = function (form, env) {
+	assert.equal(form.length, 2, "Invalid syntax-quote form: " + form);
+	var result = syntax_expand(form[1], env);
+	return result;
 };
 
 analyze.keyword = function (form, env) {
@@ -125,6 +180,11 @@ analyze.def = function (form, env) {
 
 	var name = analyze(form[1], env),
 		value = analyze(form[2], env);
+
+	if (value instanceof Macro) {
+		env[name] = value;
+		return format("// Defined macro %s", name);
+	}
 
 	return "var " + name + " = " + value;
 };
@@ -168,7 +228,6 @@ var destructure_args = function (args) {
 analyze.lambda = function (form, env) {
 	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
 	var args = form[1],
-		body = form.slice(2),
 		destructured = destructure_args(args),
 		lambda,
 		head, varargs_slice, body_str, tail;
@@ -176,6 +235,13 @@ analyze.lambda = function (form, env) {
 	lambda = new Lambda(destructured.named, destructured.rest, form.slice(2), env);
 
 	return analyze.application(lambda, env);
+};
+
+analyze.macro = function (form, env) {
+	assert.equal(true, 3 <= form.length, "Invalid macro form: " + form);
+	var macro = interpreter.analyze(form)(env);
+
+	return macro;
 };
 
 analyze.sequence = function (forms, env, separator) {
@@ -205,7 +271,7 @@ analyze.do_inner = function (form, env, last_formatter) {
 };
 
 analyze.do = function (form, env) {
-	return analyze.do_inner(form.slice(1), env, function (x) { return x; }).join("");
+	return analyze.do_inner(form.slice(1), env, function (x) { return x; }).join(";\n");
 };
 
 var primitives = {};
@@ -250,6 +316,8 @@ primitives[new Symbol("throw")] = function (fn_args, env) {
 analyze.application = function (form, env) {
 	var fn_name,
 		fn_args,
+		env_lookup,
+		macro, sub_env,
 		primitive,
 		constructor = /(.*)\.$/,
 		property_access = /^\.-(.*)/,
@@ -280,6 +348,16 @@ analyze.application = function (form, env) {
 
 	fn_name = form[0];
 	fn_args = form.slice(1);
+
+	if (is_atom(fn_name)) {
+		env_lookup = env[fn_name];
+		if (env_lookup instanceof Macro) {
+			macro = env_lookup;
+			sub_env = macro.env.extend_by(fn_name, macro.args, macro.rest, fn_args);
+			return format("// KAJ %j\n%s", macro.body(sub_env), analyze(macro.body(sub_env), env));
+		}
+	}
+
 	if (is_atom(fn_name)) {
 		// Interop.
 		match = constructor.exec(fn_name.name);
@@ -355,10 +433,9 @@ String.prototype.repeat = function (n) {
 };
 
 var usage = "USAGE TODO";
-var compile_string = function (input) {
-	var env, compiled, output;
+var compile_string = function (input, env) {
+	var compiled, output;
 
-	env = base_environment.extend();
 	compiled = compile(input, env);
 	output = compiled.join("\n");
 
@@ -367,9 +444,9 @@ var compile_string = function (input) {
 exports.compile_string = compile_string;
 
 // TODO Make this asynchronous. (Easy, but making Grunt respect that is harder.)
-var compile_io = function (input, output, callback) {
+var compile_io = function (input, output, env, callback) {
 	var data = fs.readFileSync(input, {encoding: "utf-8"}),
-		compiled = compile_string(data);
+		compiled = compile_string(data, env);
 
 	fs.writeFileSync(output, compiled);
 };
@@ -377,10 +454,11 @@ exports.compile_io = compile_io;
 
 var main = function () {
 	assert.equal(process.argv.length, 4, usage);
-	var input = process.argv[2],
-		output = process.argv[3];
+	var input	 = process.argv[2],
+		output	 = process.argv[3],
+		env		 = base_environment.extend();
 
-	compile_io(input, output, function () { console.log("Done"); });
+	compile_io(input, output, env, function () { console.log("Done"); });
 };
 
 if (require.main === module) {
