@@ -12,6 +12,9 @@
         (= (typeof form) "string"))))
 (export self-evaluating?)
 
+(def identity
+  (fn [x] x))
+(export identity)
 
 (def equal
   (fn [x y]

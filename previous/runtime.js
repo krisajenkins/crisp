@@ -18,6 +18,12 @@ return ((typeof form === "boolean") || (typeof form === "number") || (typeof for
 
 exports.is_self_evaluating = is_self_evaluating;
 
+var identity = function (x) {
+return x;
+};
+
+exports.identity = identity;
+
 var equal = function (x, y) {
 return (typeof x === "undefined") ? 
 (typeof y === "undefined")

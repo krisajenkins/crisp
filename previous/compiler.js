@@ -19,6 +19,7 @@ var is_self_evaluating = require('./runtime').is_self_evaluating;
 var is_self_printing = function (form) {
 	return (typeof(form) === 'number');
 };
+var identity = require('./runtime').identity;
 
 // TODO Duplication of interpreter code.
 var analyze = function (form, env) {
@@ -240,34 +241,21 @@ analyze.macro = function (form, env) {
 	return macro;
 };
 
-analyze.sequence = function (forms, env, separator) {
-	switch(forms.length) {
-		case 0:
-			return "";
-		case 1:
-			return analyze(forms[0], env);
-		default:
-			return forms.map(function (form) {
-				return analyze(form, env);
-			}).join(separator);
+analyze.sequence = function (forms, env, last_formatter) {
+	if (last_formatter === undefined) {
+		last_formatter = identity;
 	}
-};
 
-analyze.do_inner = function (form, env, last_formatter) {
-	switch(form.length) {
+	switch(forms.length) {
 		case 0:
 			return [last_formatter("")];
 		case 1:
-			return [last_formatter(analyze(form[0], env))];
+			return [last_formatter(analyze(forms[0], env))];
 		default:
-			var result = analyze.do_inner(form.slice(1), env, last_formatter);
-			result.unshift(analyze(form[0], env));
+			var result = analyze.sequence(forms.slice(1), env, last_formatter);
+			result.unshift(analyze(forms[0], env));
 			return result;
 	}
-};
-
-analyze.do = function (form, env) {
-	return analyze.do_inner(form.slice(1), env, function (x) { return x; }).join(";\n");
 };
 
 var primitives = {};
@@ -277,7 +265,7 @@ primitives.make_infix_function = function (operand_string, arity) {
 			assert.equal(arity, fn_args.length, "Invalid number of args.");
 		}
 
-		return format("(%s)", analyze.sequence(fn_args, env, operand_string));
+		return format("(%s)", analyze.sequence(fn_args, env).join(operand_string));
 	};
 };
 
@@ -307,7 +295,7 @@ primitives[new Symbol("typeof")] = function (fn_args, env) {
 	return format("typeof %s", analyze(fn_args[0], env));
 };
 primitives[new Symbol("throw")] = function (fn_args, env) {
-	return format("(function () { throw %s; }())", analyze.sequence(fn_args, env, " + "));
+	return format("(function () { throw %s; }())", analyze.sequence(fn_args, env).join(" + "));
 };
 
 analyze.application = function (form, env) {
@@ -337,7 +325,7 @@ analyze.application = function (form, env) {
 			);
 		}
 
-		body = analyze.do_inner(
+		body = analyze.sequence(
 			lambda.body,
 			env,
 			function (x) { return format("return %s;", x); }
@@ -366,7 +354,7 @@ analyze.application = function (form, env) {
 		// Interop.
 		match = constructor.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
-			return format("new %s(%s)", match[1], analyze.sequence(fn_args, env, ", "));
+			return format("new %s(%s)", match[1], analyze.sequence(fn_args, env).join());
 		}
 
 		match = property_access.exec(fn_name.name);
@@ -378,7 +366,7 @@ analyze.application = function (form, env) {
 		match = method_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
 			assert.equal(true, fn_args.length >= 1, "Invalid arguments to method access: " + fn_args);
-			return format("%s.%s(%s)", analyze(fn_args[0], env), match[1], analyze.sequence(fn_args.slice(1), env, ", "));
+			return format("%s.%s(%s)", analyze(fn_args[0], env), match[1], analyze.sequence(fn_args.slice(1), env).join());
 		}
 
 		// Primitive.
@@ -389,10 +377,10 @@ analyze.application = function (form, env) {
 
 		// Fn. TODO Does this go away with real interop?
 		// console.log("WARNING", form);
-		return format("%s(%s)", fn_name, analyze.sequence(fn_args, env, ", "));
+		return format("%s(%s)", fn_name, analyze.sequence(fn_args, env).join());
 	}
 
-	return format("((%s)(%s))", analyze(fn_name, env), analyze.sequence(fn_args, env, ", "));
+	return format("((%s)(%s))", analyze(fn_name, env), analyze.sequence(fn_args, env).join());
 };
 
 var preamble = function () {
