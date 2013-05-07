@@ -5,7 +5,7 @@ var assert = require('assert');
 var evaluate = require('../lib/interpreter').evaluate;
 var Symbol = require('../lib/types').Symbol;
 var Keyword = require('../lib/types').Keyword;
-var base_environment = require('../lib/baseenv').base_environment;
+var base_environment = require('../lib/compiler').base_environment;
 
 describe('interpreter', function () {
 	var env;

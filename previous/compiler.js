@@ -1,9 +1,7 @@
 /*global exports: true */
 "use strict";
 
-var util = require('util');
 var format = require('util').format;
-var inspect = require('util').inspect;
 var assert = require('assert');
 var Symbol = require('./types').Symbol;
 var interpreter = require('./interpreter');
@@ -14,7 +12,6 @@ var Macro = require('./runtime').Macro;
 var equal = require('./runtime').equal;
 var read_string = require('./reader').read_string;
 var fs = require('fs');
-var base_environment = require('./baseenv').base_environment;
 var is_atom = require('./runtime').is_atom;
 var is_self_evaluating = require('./runtime').is_self_evaluating;
 var is_self_printing = function (form) {
@@ -24,7 +21,6 @@ var identity = require('./runtime').identity;
 
 // TODO Duplication of interpreter code.
 var analyze = function (form, env) {
-	// console.log("ANALYZING", form);
 	if (is_atom(form)) {
 		if (is_self_printing(form)) {
 			return analyze.self_printing(form, env);
@@ -96,6 +92,14 @@ analyze.symbol = function (form, env) {
 	return name;
 };
 
+analyze.keyword = function (form, env) {
+	return format('"%s"', form);
+};
+
+analyze.string = function (form, env) {
+	return format('"%s"', form);
+};
+
 analyze.quote = function (form, env) {
 	assert.equal(2, form.length, "Invalid quote form: " + form);
 	return form[1];
@@ -142,14 +146,6 @@ analyze.syntax_quote = function (form, env) {
 	assert.equal(form.length, 2, "Invalid syntax-quote form: " + form);
 	var result = syntax_expand(form[1], env);
 	return result;
-};
-
-analyze.keyword = function (form, env) {
-	return format('"%s"', form);
-};
-
-analyze.string = function (form, env) {
-	return format('"%s"', form);
 };
 
 analyze.if = function (form, env) {
@@ -316,9 +312,7 @@ analyze.application = function (form, env) {
 			result = analyze(expanded, env);
 			return result;
 		}
-	}
 
-	if (is_atom(fn_name)) {
 		// Interop.
 		match = constructor.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
@@ -371,8 +365,6 @@ var compile = function (string, env) {
 		remaining_string = read.remainder;
 
 		if (read.type !== 'WHITESPACE') {
-			// console.log("FORM", form);
-
 			analyzed = analyze(form, env);
 			result.push(analyzed + ";\n");
 		}
@@ -391,7 +383,6 @@ String.prototype.repeat = function (n) {
 	return result;
 };
 
-var usage = "USAGE TODO";
 var compile_string = function (input, env) {
 	var compiled, output;
 
@@ -410,6 +401,78 @@ var compile_io = function (input, output, env, callback) {
 	fs.writeFileSync(output, compiled);
 };
 exports.compile_io = compile_io;
+
+var base_environment = new Environment();
+base_environment[new Symbol("nil")] = void(0);
+base_environment[new Symbol("true")] = true;
+base_environment[new Symbol("false")] = false;
+base_environment[new Symbol("=")] = equal;
+base_environment[new Symbol("typeof")] = function typeof_internal(arg) {
+	return typeof arg;
+};
+base_environment[new Symbol("nil?")] = function is_nil(arg) {
+	var result = typeof arg === "undefined" || (arg === false);
+	return result;
+};
+base_environment[new Symbol("length")] = function length(arg) {
+	return arg.length;
+};
+base_environment[new Symbol("not")] = function not_internal(arg) {
+	return !arg;
+};
+base_environment[new Symbol("+")] = function plus() {
+	var result = 0, i;
+	for (i = 0; i < arguments.length; i = i + 1) {
+		result += arguments[i];
+	}
+	return result;
+};
+base_environment[new Symbol("-")] = function minus(head) {
+	if (typeof head === 'undefined') {
+		return 0;
+	}
+
+	var result = head, i;
+
+	for (i = 1; i < arguments.length; i = i + 1) {
+		result -= arguments[i];
+	}
+	return result;
+};
+base_environment[new Symbol("*")] = function multiply(head) {
+	if (typeof head === 'undefined') {
+		return 0;
+	}
+
+	var result = head, i;
+
+	for (i = 1; i < arguments.length; i = i + 1) {
+		result *= arguments[i];
+	}
+	return result;
+};
+base_environment[new Symbol("/")] = function divide(head) {
+	if (typeof head === 'undefined') {
+		return 0;
+	}
+
+	var result = head, i;
+
+	for (i = 1; i < arguments.length; i = i + 1) {
+		result /= arguments[i];
+	}
+	return result;
+};
+base_environment[new Symbol("vec")] = function vec() {
+	return arguments;
+};
+(function () {
+	var data = fs.readFileSync("src/macros.crisp", {encoding: "utf-8"}),
+		compiled = compile_string(data, base_environment);
+}());
+exports.base_environment = base_environment;
+
+var usage = "USAGE TODO";
 
 var main = function () {
 	assert.equal(process.argv.length, 4, usage);

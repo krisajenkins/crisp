@@ -4,7 +4,7 @@
 var vm = require('vm');
 var assert = require('assert');
 var compile_string = require('../lib/compiler').compile_string;
-var base_environment = require('../lib/baseenv').base_environment;
+var base_environment = require('../lib/compiler').base_environment;
 
 var runIn = function (source, env, debug) {
 	var compiled, result;

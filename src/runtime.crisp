@@ -1,68 +1,69 @@
 (def Keyword (.-Keyword (require "./types")))
 (def Symbol (.-Symbol (require "./types")))
 
-(def atom? (fn [form]
-             (not (instanceof? form Array))))
+(defn atom?
+  [form]
+  (not (instanceof? form Array)))
 (export atom?)
 
-(def self-evaluating?
-  (fn [form]
-    (or (= (typeof form) "boolean")
-        (= (typeof form) "number")
-        (= (typeof form) "string"))))
+(defn self-evaluating?
+  [form]
+  (or (= (typeof form) "boolean")
+      (= (typeof form) "number")
+      (= (typeof form) "string")))
 (export self-evaluating?)
 
-(def identity
-  (fn [x] x))
+(defn identity
+  [x] x)
 (export identity)
 
-(def equal
-  (fn [x y]
-    (if (= (typeof x) "undefined")
-      (= (typeof y) "undefined")
-      (if (= (typeof y) "undefined")
-        false
-        (if (.-equal x)
-          (.equal x y)
-          (if (.-equal y)
-            (.equal y x)
-            (if (identical? (typeof x) (typeof y))
-              (= x y)
-              (throw "Cannot determine equality for objects " x " and " y))))))))
+(defn equal
+  [x y]
+  (if (= (typeof x) "undefined")
+    (= (typeof y) "undefined")
+    (if (= (typeof y) "undefined")
+      false
+      (if (.-equal x)
+        (.equal x y)
+        (if (.-equal y)
+          (.equal y x)
+          (if (identical? (typeof x) (typeof y))
+            (= x y)
+            (throw "Cannot determine equality for objects " x " and " y)))))))
 (export equal)
 
-(def Lambda
-  (fn [args rest body env]
-    (set! this.args args)
-    (set! this.rest rest)
-    (set! this.body body)
-    (set! this.env env)
-    this))
+(defn Lambda
+  [args rest body env]
+  (set! this.args args)
+  (set! this.rest rest)
+  (set! this.body body)
+  (set! this.env env)
+  this)
 
 (set! Lambda.prototype.toString
       (fn [] "[ Lambda ]"))
 
 (export Lambda)
 
-(def Macro
-  (fn [args rest body env]
-    (set! this.args args)
-    (set! this.rest rest)
-    (set! this.body body)
-    (set! this.env env)
-    this))
+(defn Macro
+  [args rest body env]
+  (set! this.args args)
+  (set! this.rest rest)
+  (set! this.body body)
+  (set! this.env env)
+  this)
 
 (set! Macro.prototype.toString
       (fn [] "[ Macro ]"))
 
 (export Macro)
 
-(def Environment
-  (fn []))
+(defn Environment
+  [])
 
 (set! Environment.prototype.extend
       (fn []
-        (def Parent (fn []))
+        (defn Parent [])
         (set! Parent.prototype this)
         (Parent.)))
 
