@@ -1,9 +1,7 @@
 /*global exports: true */
 "use strict";
 
-var util = require('util');
 var format = require('util').format;
-var inspect = require('util').inspect;
 var assert = require('assert');
 var Symbol = require('./types').Symbol;
 var interpreter = require('./interpreter');
