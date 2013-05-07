@@ -29,7 +29,7 @@ var runIn = function (source, env, debug) {
 	return result;
 };
 
-var compilesTo = function(source, expected, env, message) {
+var compilesTo = function (source, expected, env, message) {
 	var result = runIn(source, env);
 	assert.deepEqual(result, expected, message);
 };
@@ -61,7 +61,7 @@ describe('compiler', function () {
 	});
 
 	it('Keywords', function () {
-		compilesTo(":thing", ":thing", env );
+		compilesTo(":thing", ":thing", env);
 	});
 
 	/*
