@@ -60,6 +60,10 @@ describe('compiler', function () {
 		compilesTo("name", "TEST", {name: "TEST"});
 	});
 
+	it('Keywords', function () {
+		compilesTo(":thing", ":thing", env );
+	});
+
 	/*
 	it('Quote', function () {
 		compilesTo("(quote name)", "name", env);

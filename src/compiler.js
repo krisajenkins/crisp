@@ -143,7 +143,7 @@ analyze.syntax_quote = function (form, env) {
 };
 
 analyze.keyword = function (form, env) {
-	return format('"%s"', form.name);
+	return format('"%s"', form);
 };
 
 analyze.string = function (form, env) {
