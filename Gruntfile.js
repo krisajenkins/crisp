@@ -14,6 +14,9 @@ module.exports = function(grunt) {
 			}
 		},
 		cafemocha: {
+			options: {
+				reporter: "dot"
+			},
 			tests: {
 				src: 'test/**/*.js',
 			}
