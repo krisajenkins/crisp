@@ -163,7 +163,7 @@ analyze.if = function (form, env) {
 		else_form = "undefined";
 	}
 
-	return format("%s ? %s : %s", test_form, then_form, else_form);
+	return format("%s ? %s\n\t: %s", test_form, then_form, else_form);
 };
 
 analyze.def = function (form, env) {

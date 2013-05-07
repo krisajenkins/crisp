@@ -25,22 +25,12 @@ return x;
 exports.identity = identity;
 
 var equal = function (x, y) {
-return (typeof x === "undefined") ? 
-(typeof y === "undefined")
- : 
-(typeof y === "undefined") ? 
-false
- : 
-x.equal ? 
-x.equal(y)
- : 
-y.equal ? 
-y.equal(x)
- : 
-(typeof x === typeof y) ? 
-(x === y)
- : 
-(function () { throw "Cannot determine equality for objects " + x + " and " + y; }());
+return (typeof x === "undefined") ? (typeof y === "undefined")
+	: (typeof y === "undefined") ? false
+	: x.equal ? x.equal(y)
+	: y.equal ? y.equal(x)
+	: (typeof x === typeof y) ? (x === y)
+	: (function () { throw "Cannot determine equality for objects " + x + " and " + y; }());
 };
 
 exports.equal = equal;
