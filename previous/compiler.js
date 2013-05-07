@@ -52,10 +52,6 @@ var analyze = function (form, env) {
 			return analyze.if(form, env);
 		}
 
-		if (equal(form[0], new Symbol("do"))) {
-			return analyze.do(form, env);
-		}
-
 		if (equal(form[0], new Symbol("def"))) {
 			return analyze.def(form, env);
 		}
@@ -146,11 +142,11 @@ analyze.syntax_quote = function (form, env) {
 };
 
 analyze.keyword = function (form, env) {
-	return '"' + form.name + '"';
+	return format('"%s"', form.name);
 };
 
 analyze.string = function (form, env) {
-	return '"' + form + '"';
+	return format('"%s"', form);
 };
 
 analyze.if = function (form, env) {
@@ -186,7 +182,7 @@ analyze.def = function (form, env) {
 		return format("// Defined macro %s", name);
 	}
 
-	return "var " + name + " = " + value;
+	return format("var %s = %s", name, value);
 };
 
 analyze.set = function (form, env) {
@@ -195,7 +191,7 @@ analyze.set = function (form, env) {
 	var name = analyze(form[1], env),
 		value = analyze(form[2], env);
 
-	return name + " = " + value;
+	return format("%s = %s", name, value);
 };
 
 // TODO Copied from interpreter.
@@ -280,7 +276,8 @@ primitives.make_infix_function = function (operand_string, arity) {
 		if (typeof(arity) !== "undefined") {
 			assert.equal(arity, fn_args.length, "Invalid number of args.");
 		}
-		return "(" + analyze.sequence(fn_args, env, operand_string) + ")";
+
+		return format("(%s)", analyze.sequence(fn_args, env, operand_string));
 	};
 };
 
@@ -297,20 +294,20 @@ primitives[new Symbol("identical?")]	 = primitives.make_infix_function(" === ");
 
 primitives[new Symbol("not")] = function (fn_args, env) {
 	assert.equal(1, fn_args.length, "Invalid arguments to not: " + fn_args);
-	return "!" + analyze(fn_args[0], env);
+	return format("!%s", analyze(fn_args[0], env));
 };
 primitives[new Symbol("export")] = function (fn_args, env) {
 	assert.equal(1, fn_args.length, "Invalid arguments to export: " + fn_args);
 	var name = analyze(fn_args[0], env);
-	return "exports." + name + " = " + name;
+	return format("exports.%s = %s", name, name);
 };
 primitives[new Symbol("typeof")] = function (fn_args, env) {
 	assert.equal(1, fn_args.length, "Invalid arguments to typeof: " + fn_args);
 	var name = analyze(fn_args[0], env);
-	return "typeof " + analyze(fn_args[0], env);
+	return format("typeof %s", analyze(fn_args[0], env));
 };
 primitives[new Symbol("throw")] = function (fn_args, env) {
-	return "(function () { throw " + analyze.sequence(fn_args, env, " + ") + "; }())";
+	return format("(function () { throw %s; }())", analyze.sequence(fn_args, env, " + "));
 };
 
 analyze.application = function (form, env) {
@@ -323,22 +320,27 @@ analyze.application = function (form, env) {
 		property_access = /^\.-(.*)/,
 		method_access = /^\.(.*)/,
 		match,
-		lambda, head, varargs_slice, body, tail;
+		lambda, head, varargs_slice, body, tail,
+		expanded, result;
 
 	if (form instanceof Lambda) {
 		lambda = form;
-		head = "function (" + lambda.args.join(", ") + ") {\n";
+		head = format("function (%s) {\n", lambda.args.join(", "));
 
 		if (typeof lambda.rest === 'undefined') {
 			varargs_slice = "";
 		} else {
-			varargs_slice = "var " + lambda.rest + " = Array.prototype.slice.call(arguments, " + lambda.args.length +");\n";
+			varargs_slice = format(
+				"var %s = Array.prototype.slice.call(arguments, %d);\n",
+				lambda.rest,
+				lambda.args.length
+			);
 		}
 
 		body = analyze.do_inner(
 			lambda.body,
 			env,
-			function (x) { return "return " + x + ";"; }
+			function (x) { return format("return %s;", x); }
 		).join(";\n");
 
 		tail = "\n}";
@@ -354,7 +356,9 @@ analyze.application = function (form, env) {
 		if (env_lookup instanceof Macro) {
 			macro = env_lookup;
 			sub_env = macro.env.extend_by(fn_name, macro.args, macro.rest, fn_args);
-			return format("// KAJ %j\n%s", macro.body(sub_env), analyze(macro.body(sub_env), env));
+			expanded = macro.body(sub_env);
+			result = analyze(expanded, env);
+			return result;
 		}
 	}
 
@@ -362,19 +366,19 @@ analyze.application = function (form, env) {
 		// Interop.
 		match = constructor.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
-			return "new " + match[1] + "(" + analyze.sequence(fn_args, env, ", ") + ")";
+			return format("new %s(%s)", match[1], analyze.sequence(fn_args, env, ", "));
 		}
 
 		match = property_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
 			assert.equal(1, fn_args.length, "Invalid arguments to property access: " + fn_args);
-			return analyze(fn_args[0], env) + "." + match[1];
+			return format("%s.%s", analyze(fn_args[0], env), match[1]);
 		}
 
 		match = method_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
 			assert.equal(true, fn_args.length >= 1, "Invalid arguments to method access: " + fn_args);
-			return analyze(fn_args[0], env) + "." + match[1] + "(" + analyze.sequence(fn_args.slice(1), env, ", ") + ")";
+			return format("%s.%s(%s)", analyze(fn_args[0], env), match[1], analyze.sequence(fn_args.slice(1), env, ", "));
 		}
 
 		// Primitive.
@@ -385,10 +389,10 @@ analyze.application = function (form, env) {
 
 		// Fn. TODO Does this go away with real interop?
 		// console.log("WARNING", form);
-		return fn_name + "(" + analyze.sequence(fn_args, env, ", ") + ")";
+		return format("%s(%s)", fn_name, analyze.sequence(fn_args, env, ", "));
 	}
 
-	return "((" + analyze(fn_name, env) + ")(" + analyze.sequence(fn_args, env, ", ") + "))";
+	return format("((%s)(%s))", analyze(fn_name, env), analyze.sequence(fn_args, env, ", "));
 };
 
 var preamble = function () {
