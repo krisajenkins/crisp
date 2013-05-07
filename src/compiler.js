@@ -94,6 +94,14 @@ analyze.symbol = function (form, env) {
 	return name;
 };
 
+analyze.keyword = function (form, env) {
+	return format('"%s"', form);
+};
+
+analyze.string = function (form, env) {
+	return format('"%s"', form);
+};
+
 analyze.quote = function (form, env) {
 	assert.equal(2, form.length, "Invalid quote form: " + form);
 	return form[1];
@@ -140,14 +148,6 @@ analyze.syntax_quote = function (form, env) {
 	assert.equal(form.length, 2, "Invalid syntax-quote form: " + form);
 	var result = syntax_expand(form[1], env);
 	return result;
-};
-
-analyze.keyword = function (form, env) {
-	return format('"%s"', form);
-};
-
-analyze.string = function (form, env) {
-	return format('"%s"', form);
 };
 
 analyze.if = function (form, env) {
