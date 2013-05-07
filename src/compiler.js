@@ -17,7 +17,7 @@ var base_environment = require('./baseenv').base_environment;
 var is_atom = require('./runtime').is_atom;
 var is_self_evaluating = require('./runtime').is_self_evaluating;
 var is_self_printing = function (form) {
-	return (typeof(form) === 'number');
+	return (typeof form === 'number');
 };
 var identity = require('./runtime').identity;
 
@@ -37,7 +37,7 @@ var analyze = function (form, env) {
 			return analyze.keyword(form, env);
 		}
 
-		if (typeof(form) === "string") {
+		if (typeof form === "string") {
 			return analyze.string(form, env);
 		}
 	} else {
@@ -82,7 +82,8 @@ analyze.self_printing = function (form, env) {
 analyze.symbol = function (form, env) {
 	// TODO Should symbols be self printing, with this code going in the toString method? Might simplify application, as all heads would be resolved first.
 	var name = form.name,
-		is, dash;
+		is,
+		dash;
 
 	is = name.match(/(.*)\?$/);
 	if (is) {

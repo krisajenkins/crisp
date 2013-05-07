@@ -7,7 +7,7 @@ function make_parser(regexp, type) {
 	return function (string) {
 		var re_match = regexp.exec(string),
 			new_string;
-		if (re_match && typeof(re_match[0]) !== 'undefined') {
+		if (re_match && typeof re_match[0] !== 'undefined') {
 			new_string = string.replace(re_match[0], "");
 			return {
 				result: re_match.shift(),
@@ -57,7 +57,7 @@ function read_until(closing_matcher, string) {
 			remaining_string = match.remainder;
 		}
 
-		if (remaining_string === "" ) {
+		if (remaining_string === "") {
 			console.log("Forms", forms);
 			throw "Out of string!";
 		}
@@ -165,7 +165,7 @@ exports.read_string = read_string;
 
 var read = function (string) {
 	var form = read_string(string);
-	if (typeof(form) !== 'undefined') {
+	if (typeof form !== 'undefined') {
 		return form.result;
 	}
 };

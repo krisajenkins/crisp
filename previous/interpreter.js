@@ -222,7 +222,7 @@ analyze.lambda = function (form) {
 
 	return function (env) {
 		return new Lambda(destructured.named, destructured.rest, analyzed_body, env);
-	} ;
+	};
 };
 
 analyze.macro = function (form) {
@@ -257,7 +257,7 @@ Environment.prototype.extend_by = function (callee, args, rest, values) {
 	return sub_env;
 };
 
-var handle_complex = function(fn, fn_name, args, env) {
+var handle_complex = function (fn, fn_name, args, env) {
 	var i,
 		expanded_code,
 		analysis,
@@ -291,7 +291,8 @@ analyze.application = function (form) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
 		analyzed_fn,
-		analyzed_args;
+		analyzed_args,
+		expanded;
 
 	// TODO We're splitting off the head only to map analyze to everything.
 	analyzed_fn = analyze(fn_name);
@@ -310,7 +311,7 @@ analyze.application = function (form) {
 			||
 			fn instanceof Macro
 		) {
-			var expanded = handle_complex(fn, fn_name, args, env);
+			expanded = handle_complex(fn, fn_name, args, env);
 			return expanded(env);
 		}
 

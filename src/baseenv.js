@@ -21,47 +21,47 @@ base_environment[new Symbol("length")] = function (arg) {
 	return arg.length;
 };
 base_environment[new Symbol("not")] = function (arg) {
-	return ! arg;
+	return !arg;
 };
 base_environment[new Symbol("+")] = function () {
 	var result = 0, i;
-	for (i = 0; i < arguments.length; i++) {
+	for (i = 0; i < arguments.length; i = i + 1) {
 		result += arguments[i];
 	}
 	return result;
 };
 base_environment[new Symbol("-")] = function (head) {
-	if (typeof(head) === 'undefined') {
+	if (typeof head === 'undefined') {
 		return 0;
 	}
 
 	var result = head, i;
 
-	for (i = 1; i < arguments.length; i++) {
+	for (i = 1; i < arguments.length; i = i + 1) {
 		result -= arguments[i];
 	}
 	return result;
 };
 base_environment[new Symbol("*")] = function (head) {
-	if (typeof(head) === 'undefined') {
+	if (typeof head === 'undefined') {
 		return 0;
 	}
 
 	var result = head, i;
 
-	for (i = 1; i < arguments.length; i++) {
+	for (i = 1; i < arguments.length; i = i + 1) {
 		result *= arguments[i];
 	}
 	return result;
 };
 base_environment[new Symbol("/")] = function (head) {
-	if (typeof(head) === 'undefined') {
+	if (typeof head === 'undefined') {
 		return 0;
 	}
 
 	var result = head, i;
 
-	for (i = 1; i < arguments.length; i++) {
+	for (i = 1; i < arguments.length; i = i + 1) {
 		result /= arguments[i];
 	}
 	return result;
