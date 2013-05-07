@@ -314,9 +314,7 @@ analyze.application = function (form, env) {
 			result = analyze(expanded, env);
 			return result;
 		}
-	}
 
-	if (is_atom(fn_name)) {
 		// Interop.
 		match = constructor.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
