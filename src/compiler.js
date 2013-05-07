@@ -1,3 +1,4 @@
+/*global exports: true */
 "use strict";
 
 var util = require('util');
@@ -190,39 +191,11 @@ analyze.set = function (form, env) {
 	return format("%s = %s", name, value);
 };
 
-// TODO Copied from interpreter.
-var destructure_args = function (args) {
-	var varargs_point, named, rest, i,
-		varargs_symbol = new Symbol("&");
-
-	// TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
-	assert.equal(true, equal(new Symbol("vec"), args[0]), "Invalid first arg: " + args[0]);
-
-	varargs_point = -1;
-	for (i = 0; i < args.length; i = i + 1) {
-		if (varargs_symbol.equal(args[i])) {
-			varargs_point = i;
-		}
-	}
-
-	if (varargs_point === -1) {
-		named = args.slice(1);
-		rest = undefined;
-	} else {
-		assert.equal(args.length, varargs_point + 2, "Exactly one symbol may follow '&' in a varargs declaration.");
-		named = args.slice(1, varargs_point);
-		rest = args.slice(varargs_point + 1);
-	}
-
-	return {named: named, rest: rest};
-};
-
 analyze.lambda = function (form, env) {
 	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
 	var args = form[1],
-		destructured = destructure_args(args),
-		lambda,
-		head, varargs_slice, body_str, tail;
+		destructured = interpreter.destructure_args(args),
+		lambda;
 
 	lambda = new Lambda(destructured.named, destructured.rest, form.slice(2), env);
 
@@ -370,8 +343,7 @@ analyze.application = function (form, env) {
 			return primitive(fn_args, env);
 		}
 
-		// Fn. TODO Does this go away with real interop?
-		// console.log("WARNING", form);
+		// We should be doing some compile-time checking here.
 		return format("%s(%s)", fn_name, analyze.sequence(fn_args, env).join());
 	}
 

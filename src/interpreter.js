@@ -33,10 +33,6 @@ var analyze = function (form) {
 			return analyze.if(form);
 		}
 
-		if (equal(form[0], new Symbol("do"))) {
-			return analyze.do(form);
-		}
-
 		if (equal(form[0], new Symbol("def"))) {
 			return analyze.def(form);
 		}
@@ -71,11 +67,11 @@ analyze.symbol = function (form) {
 	};
 };
 
-analyze.do = function (form) {
+analyze.sequence = function (forms) {
 	var analyzed = [], i;
 
-	for (i = 1; i < form.length; i = i + 1) {
-		analyzed.push(analyze(form[i]));
+	for (i = 0; i < forms.length; i = i + 1) {
+		analyzed.push(analyze(forms[i]));
 	}
 
 	return function (env) {
@@ -97,7 +93,7 @@ analyze.quote = function (form) {
 };
 
 var syntax_expand = function (form, env) {
-	var result, i, expanded, analysis, subform;
+	var result, i, expanded, analysis, subform, subvalue;
 
 	if (is_atom(form)) {
 		return form;
@@ -125,7 +121,10 @@ var syntax_expand = function (form, env) {
 			equal(subform[0], new Symbol("unquote-splicing"))
 		) {
 			analysis = analyze(subform[1]);
-			result = result.concat(analysis(env));
+			subvalue = analysis(env);
+			if (typeof subvalue !== "undefined") {
+				result = result.concat(subvalue);
+			}
 		} else {
 			expanded = syntax_expand(subform, env);
 			result.push(expanded);
@@ -177,12 +176,15 @@ analyze.def = function (form) {
 
 analyze.apply = function (form) {
 	assert.equal(3, form.length, "Invalid apply form: " + form);
-	var analyzed_arg = analyze(form[2]);
+	var fn = form[1],
+		analyzed_arg = analyze(form[2]);
 
 	return function (env) {
 		var args = analyzed_arg(env);
 
-		args.unshift(form[1]);
+		assert.equal(false, is_atom(args), "Argument to an apply call must be a sequence.");
+		args.unshift(fn);
+
 		return analyze.application(args)(env);
 	};
 };
@@ -212,13 +214,15 @@ var destructure_args = function (args) {
 
 	return {named: named, rest: rest};
 };
+exports.destructure_args = destructure_args;
 
 analyze.lambda = function (form) {
-	assert.equal(3, form.length, "Invalid fn form: " + form);
+	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
 	var args = form[1],
-		body = form[2],
-		analyzed_body = analyze(body),
-		destructured = destructure_args(args);
+		body = form.slice(2),
+		destructured = destructure_args(args),
+		analyzed_body;
+	analyzed_body = analyze.sequence(body);
 
 	return function (env) {
 		return new Lambda(destructured.named, destructured.rest, analyzed_body, env);
@@ -250,8 +254,10 @@ Environment.prototype.extend_by = function (callee, args, rest, values) {
 	for (i = 0; i < args.length; i = i + 1) {
 		sub_env[args[i]] = values[i];
 	}
-	if (typeof rest !== "undefined" && values.length > args.length) {
-		sub_env[rest] = values.slice(args.length);
+	if (typeof rest !== "undefined") {
+		if (values.length > args.length) {
+			sub_env[rest] = values.slice(args.length);
+		}
 	}
 
 	return sub_env;

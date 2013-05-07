@@ -15,7 +15,8 @@ base_environment[new Symbol("typeof")] = function typeof_internal(arg) {
 	return typeof arg;
 };
 base_environment[new Symbol("nil?")] = function is_nil(arg) {
-	return typeof arg === "undefined";
+	var result = typeof arg === "undefined" || (arg === false);
+	return result;
 };
 base_environment[new Symbol("length")] = function length(arg) {
 	return arg.length;
