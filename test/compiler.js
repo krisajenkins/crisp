@@ -146,6 +146,15 @@ describe('compiler', function () {
 	});
 	*/
 
+	it('Interop', function () {
+		runIn("(def Person (fn [name] (set! this.name name) this))", env);
+		runIn('(set! Person.prototype.greet (fn [] (+ "Hello " this.name)))', env);
+
+		compilesTo('(def kris (Person. "Kris")) kris', {name: "Kris"}, env);
+		compilesTo('(.-name kris)', "Kris", env);
+		compilesTo('(.greet kris)', "Hello Kris", env);
+	});
+
 	it('Varargs', function () {
 		compilesTo("(def thing_a (fn [x]))           (thing_a 5)", undefined, {});
 		compilesTo("(def thing_b (fn [x] x))         (thing_b 5)", 5, {});
