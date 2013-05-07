@@ -237,6 +237,34 @@ analyze.macro = function (form) {
 	};
 };
 
+var handle_complex = function(fn, fn_name, args, env) {
+	var i,
+		expanded_code,
+		analysis,
+		sub_env = fn.env.extend();
+
+	if (typeof fn.rest === "undefined") {
+		assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + ". Got " + args.length + ".");
+	} else {
+		assert.equal(true, fn.args.length <= args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + "+. Got " + args.length + "." + fn.args);
+	}
+
+	for (i = 0; i < fn.args.length; i = i + 1) {
+		sub_env[fn.args[i]] = args[i];
+	}
+	if (typeof fn.rest !== "undefined" && args.length > fn.args.length) {
+		sub_env[fn.rest] = args.slice(fn.args.length);
+	}
+
+	if (fn instanceof Macro) {
+		expanded_code = fn.body(sub_env);
+		analysis = analyze(expanded_code);
+		return analysis(env);
+	}
+
+	return fn.body(sub_env);
+};
+
 analyze.application = function (form) {
 	var fn_name = form[0],
 		fn_args = form.slice(1),
@@ -260,28 +288,7 @@ analyze.application = function (form) {
 			||
 			fn instanceof Macro
 		) {
-			sub_env = fn.env.extend();
-
-			if (typeof fn.rest === "undefined") {
-				assert.equal(fn.args.length, args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + ". Got " + args.length + ".");
-			} else {
-				assert.equal(true, fn.args.length <= args.length, "Function " + fn_name + " called with the wrong number of arguments, Expected " + fn.args.length + "+. Got " + args.length + "." + fn.args);
-			}
-
-			for (i = 0; i < fn.args.length; i = i + 1) {
-				sub_env[fn.args[i]] = args[i];
-			}
-			if (typeof fn.rest !== "undefined" && args.length > fn.args.length) {
-				sub_env[fn.rest] = args.slice(fn.args.length);
-			}
-
-			if (fn instanceof Macro) {
-				expanded_code = fn.body(sub_env);
-				analysis = analyze(expanded_code);
-				return analysis(env);
-			}
-
-			return fn.body(sub_env);
+			return handle_complex(fn, fn_name, args, env);
 		}
 
 		try {
