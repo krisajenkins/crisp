@@ -152,8 +152,7 @@ analyze.string = function (form, env) {
 
 analyze.if = function (form, env) {
 	assert.equal(true, 3 <= form.length <= 4, "Invalid if form: " + form);
-	var result = [],
-		test_form, then_form, else_form;
+	var test_form, then_form, else_form;
 
 	test_form = analyze(form[1], env);
 	then_form = analyze(form[2], env);
@@ -164,12 +163,7 @@ analyze.if = function (form, env) {
 		else_form = "undefined";
 	}
 
-	result.push(test_form + " ? ");
-	result.push(then_form);
-	result.push(" : ");
-	result.push(else_form);
-
-	return result.join("\n");
+	return format("%s ? %s : %s", test_form, then_form, else_form);
 };
 
 analyze.def = function (form, env) {
