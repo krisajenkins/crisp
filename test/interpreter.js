@@ -124,6 +124,7 @@ describe('interpreter', function () {
 		assert.equal(evaluate("(unless false 1)", env), 1);
 		assert.equal(evaluate("(unless true 1)", env), undefined);
 	});
+
 	it('Varargs Macro', function () {
 		evaluate("(def when (macro [test & body] `(if ~test (do ~@body))))", env);
 		assert.equal(evaluate("(when true 5 4 3)", env), 3);
