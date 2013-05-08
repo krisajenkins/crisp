@@ -5,6 +5,7 @@ var assert = require('assert');
 var read_string = require('../lib/reader').read_string;
 var Symbol = require('../lib/types').Symbol;
 var Keyword = require('../lib/types').Keyword;
+var Vector = require('../lib/types').Vector;
 
 describe('reader', function () {
 	it('Numbers', function () {
@@ -36,12 +37,12 @@ describe('reader', function () {
 		);
 	});
 	it('Vectors', function () {
-		assert.deepEqual(read_string("[]").result, [new Symbol("vec")]);
-		assert.deepEqual(read_string("[1]").result, [new Symbol("vec"), 1]);
-		assert.deepEqual(read_string("[ ]").result, [new Symbol("vec")]);
+		assert.deepEqual(read_string("[]").result, new Vector([]));
+		assert.deepEqual(read_string("[ ]").result, new Vector([]));
+		assert.deepEqual(read_string("[1]").result, new Vector([1]));
 		assert.deepEqual(
 			read_string("[1 a 2 b]").result,
-			[new Symbol("vec"), 1, new Symbol("a"), 2, new Symbol("b")]
+			new Vector([1, new Symbol("a"), 2, new Symbol("b")])
 		);
 	});
 	it('Maps', function () {

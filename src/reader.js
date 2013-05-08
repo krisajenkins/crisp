@@ -2,6 +2,7 @@
 
 var Symbol = require('./types').Symbol;
 var Keyword = require('./types').Keyword;
+var Vector = require('./types').Vector;
 
 function make_parser(regexp, type) {
 	return function (string) {
@@ -113,7 +114,7 @@ function read_string(string) {
 	match = match_open_bracket(string);
 	if (match) {
 		match = read_until(match_close_bracket, match.remainder);
-		match.result.unshift(new Symbol("vec"));
+		match.result = new Vector(match.result);
 		return match;
 	}
 

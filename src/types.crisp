@@ -1,3 +1,5 @@
+(def equal (require "deep-equal"))
+
 (defn Symbol
   [name]
   (set! this.name name)
@@ -27,3 +29,17 @@
       (fn []
         (+ ":" this.name)))
 (export Keyword)
+
+(defn Vector
+  [items]
+  (set! this.items items)
+  this)
+(set! Vector.prototype.type "crisp.types/vector")
+(set! Vector.prototype.equal
+      (fn [other]
+        (and (identical? this.type other.type)
+             (equal this.items other.items))))
+(set! Vector.prototype.toString
+      (fn []
+        (+ "new Vector(" this.items "')")))
+(export Vector)
