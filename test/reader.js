@@ -2,17 +2,23 @@
 "use strict";
 
 var assert = require('assert');
+var format = require('util').format;
 var read_string = require('../lib/reader').read_string;
 var Symbol = require('../lib/types').Symbol;
+var CrispString = require('../lib/types').CrispString;
+var CrispNumber = require('../lib/types').CrispNumber;
+var CrispBoolean = require('../lib/types').CrispBoolean;
+var CrispNumber = require('../lib/types').CrispNumber;
 var Keyword = require('../lib/types').Keyword;
 var Vector = require('../lib/types').Vector;
+var List = require('../lib/types').List;
 
 describe('reader', function () {
 	it('Numbers', function () {
-		assert.equal(read_string("2").result, 2);
-		assert.equal(read_string("2").result, 2);
-		assert.equal(read_string("-9").result, -9);
-		assert.equal(read_string("51.13").result, 51.13);
+		assert.deepEqual(read_string("2").result, new CrispNumber(2));
+		assert.deepEqual(read_string("2").result, new CrispNumber(2));
+		assert.deepEqual(read_string("-9").result, new CrispNumber(-9));
+		assert.deepEqual(read_string("51.13").result, new CrispNumber(51.13));
 	});
 	it('Symbols', function () {
 		assert.deepEqual(read_string("somevar").result, new Symbol("somevar"));
@@ -20,70 +26,72 @@ describe('reader', function () {
 		assert.deepEqual(read_string("list?").result, new Symbol("list?"));
 		assert.deepEqual(read_string("tom.dick_&-harry").result, new Symbol("tom.dick_&-harry"));
 	});
+	it('Boolean', function () {
+		assert.deepEqual(read_string("true").result, new CrispBoolean("true"));
+		assert.deepEqual(read_string("false").result, new CrispBoolean("false"));
+	});
 	it('Strings', function () {
-		assert.equal(read_string('"test"').result, "test");
+		assert.deepEqual(read_string('"test"').result, new CrispString("test"));
 	});
 	it('Keywords', function () {
 		assert.deepEqual(read_string(":a").result, new Keyword("a"));
 		assert.deepEqual(read_string(":some-thing").result, new Keyword("some-thing"));
 	});
 	it('Lists', function () {
-		assert.deepEqual(read_string("()").result, []);
-		assert.deepEqual(read_string("(1)").result, [1]);
-		assert.deepEqual(read_string("( )").result, []);
+		assert.deepEqual(read_string("()").result, new List([]));
+		assert.deepEqual(read_string("(1)").result, new List([new CrispNumber(1)]));
+		assert.deepEqual(read_string("()").result, new List([]));
 		assert.deepEqual(
 			read_string("(1 a 2 b)").result,
-			[1, new Symbol("a"), 2, new Symbol("b")]
+			new List([new CrispNumber(1), new Symbol("a"), new CrispNumber(2), new Symbol("b")])
 		);
 	});
 	it('Vectors', function () {
 		assert.deepEqual(read_string("[]").result, new Vector([]));
 		assert.deepEqual(read_string("[ ]").result, new Vector([]));
-		assert.deepEqual(read_string("[1]").result, new Vector([1]));
+		assert.deepEqual(read_string("[1]").result, new Vector([new CrispNumber(1)]));
 		assert.deepEqual(
 			read_string("[1 a 2 b]").result,
-			new Vector([1, new Symbol("a"), 2, new Symbol("b")])
+			new Vector([new CrispNumber(1), new Symbol("a"), new CrispNumber(2), new Symbol("b")])
 		);
 	});
 	it('Maps', function () {
 		assert.deepEqual(read_string("{}").result, [new Symbol("hash-map")]);
-		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("hash-map"), new Symbol("a"), 1, new Symbol("b"), 2]);
+		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("hash-map"), new Symbol("a"), new CrispNumber(1), new Symbol("b"), new CrispNumber(2)]);
 	});
 	it('Quotes', function () {
 		assert.deepEqual(
 			read_string("'a").result,
-			[
+			new List([
 				new Symbol("quote"),
 				new Symbol("a"),
-			]
+			])
 		);
 		assert.deepEqual(
 			read_string("'(1 2 3)").result,
-			[
-				new Symbol("quote"), [1, 2, 3]
-			]
+			new List([new Symbol("quote"), new List([new CrispNumber(1), new CrispNumber(2), new CrispNumber(3)])])
 		);
 	});
 	it('Macros', function () {
 		assert.deepEqual(
 			read_string("`(if ~test (do ~@body))").result,
-			[
+			new List([
 				new Symbol("syntax-quote"),
-				[
+				new List([
 					new Symbol("if"),
-					[
+					new List([
 						new Symbol("unquote"),
 						new Symbol("test"),
-					],
-					[
+					]),
+					new List([
 						new Symbol("do"),
-						[
+						new List([
 							new Symbol("unquote-splicing"),
 							new Symbol("body"),
-						],
-					],
-				],
-			]
+						]),
+					]),
+				]),
+			])
 		);
 	});
 });

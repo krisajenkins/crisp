@@ -145,4 +145,14 @@ describe('interpreter', function () {
 		assert.equal(evaluate('(do (def name "test") 5)', env), 5);
 	});
 
+	it('First, Second and Rest', function () {
+		assert.equal(evaluate("(first nil)", env), undefined);
+		assert.equal(evaluate("(first '(1 2 3 4 5))", env), 1);
+
+		assert.equal(evaluate("(second nil)", env), undefined);
+		assert.equal(evaluate("(second '(1 2 3 4 5))", env), 2);
+
+		assert.equal(evaluate("(rest nil)", env), undefined);
+		assert.deepEqual(evaluate("(rest '(1 2 3 4 5))", env), [2, 3, 4, 5]);
+	});
 });

@@ -1,8 +1,11 @@
 "use strict";
 
+var format = require('util').format;
 var assert = require('assert');
 var Symbol = require('./types').Symbol;
 var Keyword = require('./types').Keyword;
+var Vector = require('./types').Vector;
+var List = require('./types').List;
 var Environment = require('./runtime').Environment;
 var Lambda = require('./runtime').Lambda;
 var Macro = require('./runtime').Macro;
@@ -12,6 +15,7 @@ var is_atom = require('./runtime').is_atom;
 var is_self_evaluating = require('./runtime').is_self_evaluating;
 
 var analyze = function (form) {
+	console.log(format("FORM: %s", form));
 	if (is_atom(form)) {
 		if (is_self_evaluating(form)) {
 			return analyze.self_evaluating(form);
@@ -21,38 +25,41 @@ var analyze = function (form) {
 			return analyze.symbol(form);
 		}
 	} else {
-		if (equal(form[0], new Symbol("quote"))) {
+		assert.equal(true, form instanceof List, "Analyzing non-List. We shouldn't be doing that.");
+
+		if (equal(form.first, new Symbol("quote"))) {
 			return analyze.quote(form);
 		}
 
-		if (equal(form[0], new Symbol("syntax-quote"))) {
+		if (equal(form.first, new Symbol("syntax-quote"))) {
 			return analyze.syntax_quote(form);
 		}
 
-		if (equal(form[0], new Symbol("if"))) {
+		if (equal(form.first, new Symbol("if"))) {
 			return analyze.if(form);
 		}
 
-		if (equal(form[0], new Symbol("def"))) {
+		if (equal(form.first, new Symbol("def"))) {
 			return analyze.def(form);
 		}
 
-		if (equal(form[0], new Symbol("apply"))) {
+		if (equal(form.first, new Symbol("apply"))) {
 			return analyze.apply(form);
 		}
 
-		if (equal(form[0], new Symbol("fn"))) {
+		if (equal(form.first, new Symbol("fn"))) {
 			return analyze.lambda(form);
 		}
 
-		if (equal(form[0], new Symbol("macro"))) {
+		console.log(format("FIRST %s | %s", form.first, form));
+		if (equal(form.first, new Symbol("macro"))) {
 			return analyze.macro(form);
 		}
 
 		return analyze.application(form);
 	}
 
-	throw new Error("Unhandled form: " + form);
+	throw new Error("IUnhandled form: " + form);
 };
 
 analyze.self_evaluating = function (form) {
@@ -86,7 +93,7 @@ analyze.sequence = function (forms) {
 };
 
 analyze.quote = function (form) {
-	assert.equal(form.length, 2, "Invalid quote form: " + form);
+	assert.equal(form.count, 2, "Invalid quote form: " + form);
 	return function (env) {
 		return form[1];
 	};
@@ -191,25 +198,27 @@ analyze.apply = function (form) {
 
 var destructure_args = function (args) {
 	var varargs_point, named, rest, i,
-		varargs_symbol = new Symbol("&");
+		varargs_symbol = new Symbol("&"),
+		arg;
 
-	// TODO We're slicing off the leading '#vec' here. Seems odd. Fix when we destructure binds.
-	assert.equal(true, equal(new Symbol("vec"), args[0]), "Invalid first arg: " + args[0]);
+	assert.equal(true, args instanceof Vector, "Invalid arguments: " + args);
 
 	varargs_point = -1;
-	for (i = 0; i < args.length; i = i + 1) {
-		if (varargs_symbol.equal(args[i])) {
+	for (i = 0; i < args.count(); i = i + 1) {
+		arg = args.nth(i);
+		assert.equal(true, arg instanceof Symbol, format("Invalid argument: %d. Expected symbol, got: %s", i, arg));
+		if (varargs_symbol.equal(arg)) {
 			varargs_point = i;
 		}
 	}
 
 	if (varargs_point === -1) {
-		named = args.slice(1);
+		named = args;
 		rest = undefined;
 	} else {
-		assert.equal(args.length, varargs_point + 2, "Exactly one symbol may follow '&' in a varargs declaration.");
-		named = args.slice(1, varargs_point);
-		rest = args.slice(varargs_point + 1);
+		assert.equal(args.count(), varargs_point + 2, "Exactly one symbol must follow '&' in a varargs declaration.");
+		named = args.take(varargs_point);
+		rest = args.nth(varargs_point + 1);
 	}
 
 	return {named: named, rest: rest};
@@ -237,30 +246,9 @@ analyze.macro = function (form) {
 		destructured = destructure_args(args);
 
 	return function (env) {
-		return new Macro(destructured.named, destructured.rest, analyzed_body, env);
+		// console.log(format("CREATED MACRO: %j", new Macro(destructured.named, destructured.rest, analyzed_body, env)));
+		return new Macro(destructured.named, destructured.rest, body, env);
 	};
-};
-
-Environment.prototype.extend_by = function (callee, args, rest, values) {
-	var i,
-		sub_env = this.extend();
-
-	if (typeof rest === "undefined") {
-		assert.equal(args.length, values.length, "Callee " + callee + " called with the wrong number of arguments, Expected " + args.length + ". Got " + values.length + ".");
-	} else {
-		assert.equal(true, args.length <= values.length, "Callee " + callee + " called with the wrong number of arguments, Expected " + args.length + "+. Got " + values.length + ".");
-	}
-
-	for (i = 0; i < args.length; i = i + 1) {
-		sub_env[args[i]] = values[i];
-	}
-	if (typeof rest !== "undefined") {
-		if (values.length > args.length) {
-			sub_env[rest] = values.slice(args.length);
-		}
-	}
-
-	return sub_env;
 };
 
 var handle_complex = function (fn, fn_name, args, env) {
@@ -282,7 +270,7 @@ var handle_complex = function (fn, fn_name, args, env) {
 	sub_env = fn.env.extend_by(fn_name, fn.args, fn.rest, args);
 
 	if (fn instanceof Macro) {
-		expanded_code = fn.body(sub_env);
+		expanded_code = analyze(fn.body)(sub_env);
 		analysis = analyze(expanded_code);
 		return analysis;
 	}
@@ -294,15 +282,12 @@ var handle_complex = function (fn, fn_name, args, env) {
 exports.handle_complex = handle_complex;
 
 analyze.application = function (form) {
+	console.log(format("FORM: %s", form));
 	var fn_name = form[0],
-		fn_args = form.slice(1),
-		analyzed_fn,
-		analyzed_args,
+		analyzed_form = form.map(analyze),
+		analyzed_fn = analyzed_form[0],
+		analyzed_args = analyzed_form.slice(1),
 		expanded;
-
-	// TODO We're splitting off the head only to map analyze to everything.
-	analyzed_fn = analyze(fn_name);
-	analyzed_args = fn_args.map(analyze);
 
 	return function (env) {
 		var fn, args, sub_env, i, expanded_code, analysis;
@@ -322,7 +307,7 @@ analyze.application = function (form) {
 		}
 
 		try {
-			return fn.apply(env, args); // TODO What should 'this' be?
+			return fn.apply(undefined, args); // TODO What should 'this' be?
 		} catch (e) {
 			throw new Error("Failed to apply function: " + fn_name + " Error was: " + e);
 		}

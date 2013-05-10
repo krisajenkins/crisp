@@ -3,9 +3,12 @@
 
 var format = require('util').format;
 var assert = require('assert');
+var CrispString = require('./types').CrispString;
+var CrispBoolean = require('./types').CrispBoolean;
 var Symbol = require('./types').Symbol;
-var interpreter = require('./interpreter');
 var Keyword = require('./types').Keyword;
+var Vector = require('./types').Vector;
+var List = require('./types').List;
 var Environment = require('./runtime').Environment;
 var Lambda = require('./runtime').Lambda;
 var Macro = require('./runtime').Macro;
@@ -15,61 +18,76 @@ var fs = require('fs');
 var is_atom = require('./runtime').is_atom;
 var is_self_evaluating = require('./runtime').is_self_evaluating;
 var is_self_printing = function (form) {
-	return (typeof form === 'number');
+	return typeof form === 'number'
+		||
+		typeof form === 'boolean'
+		||
+		typeof form === 'undefined'
+		||
+		form instanceof CrispString
+		||
+		form instanceof CrispBoolean
+		||
+		form instanceof Keyword;
 };
 var identity = require('./runtime').identity;
 
 // TODO Duplication of interpreter code.
 var analyze = function (form, env) {
+	// console.log(format("ANALYZING %s", form));
 	if (is_atom(form)) {
-		if (is_self_printing(form)) {
-			return analyze.self_printing(form, env);
+		if (form instanceof CrispString) {
+			return format("%j", form.value);
 		}
 
-		if (form instanceof Symbol) {
-			return analyze.symbol(form, env);
+		if (form instanceof CrispBoolean) {
+			return form.value;
 		}
 
 		if (form instanceof Keyword) {
-			return analyze.keyword(form, env);
+			return format("%j", ":" + form.name);
 		}
 
-		if (typeof form === "string") {
-			return analyze.string(form, env);
+		if (form instanceof Symbol) {
+			return form.name;
+		}
+
+		if (is_self_printing(form)) {
+			return analyze.self_printing(form, env);
 		}
 	} else {
-		if (equal(form[0], new Symbol("quote"))) {
-			return analyze.quote(form, env);
-		}
-
-		if (equal(form[0], new Symbol("syntax-quote"))) {
-			return analyze.syntax_quote(form, env);
-		}
-
-		if (equal(form[0], new Symbol("if"))) {
+		if (equal(form.first(), new Symbol("if"))) {
 			return analyze.if(form, env);
 		}
 
-		if (equal(form[0], new Symbol("def"))) {
+		if (equal(form.first(), new Symbol("def"))) {
 			return analyze.def(form, env);
 		}
 
-		if (equal(form[0], new Symbol("set!"))) {
+		if (equal(form.first(), new Symbol("set!"))) {
 			return analyze.set(form, env);
 		}
 
-		if (equal(form[0], new Symbol("fn"))) {
+		if (equal(form.first(), new Symbol("fn"))) {
 			return analyze.lambda(form, env);
 		}
 
-		if (equal(form[0], new Symbol("macro"))) {
+		if (equal(form.first(), new Symbol("macro"))) {
 			return analyze.macro(form, env);
+		}
+
+		if (equal(form.first(), new Symbol("quote"))) {
+			return analyze.quote(form, env);
+		}
+
+		if (equal(form.first(), new Symbol("syntax-quote"))) {
+			return analyze.syntax_quote(form, env);
 		}
 
 		return analyze.application(form, env);
 	}
 
-	throw "Unhandled form: " + form;
+	throw new Error("Unhandled form: " + form);
 };
 
 analyze.self_printing = function (form, env) {
@@ -92,17 +110,141 @@ analyze.symbol = function (form, env) {
 	return name;
 };
 
-analyze.keyword = function (form, env) {
-	return format('"%s"', form);
-};
-
 analyze.string = function (form, env) {
 	return format('"%s"', form);
 };
 
 analyze.quote = function (form, env) {
-	assert.equal(2, form.length, "Invalid quote form: " + form);
-	return form[1];
+	assert.equal(2, form.count(), "Invalid quote form: " + form);
+	return form.second();
+};
+
+analyze.if = function (form, env) {
+	assert.equal(true, 3 <= form.count() <= 4, "Invalid if form: " + form);
+
+	var test_form = analyze(form.second(), env),
+		then_form = analyze(form.third(), env),
+		else_form = analyze(form.fourth(), env);
+
+	return format("(typeof %s !== 'undefined' && ! equal(%s, new CrispBoolean('false'))) ? %s\n\t: %s", test_form, test_form, then_form, else_form);
+};
+
+var compile_lambda = function(lambda, env) {
+	var arglist, head, varargs_slice, body, tail;
+	arglist = lambda.args.items.map(function (symbol) { return analyze(symbol, env); }).join(", ");
+	head = format("function (%s) {\n", arglist);
+
+	if (typeof lambda.rest === 'undefined') {
+		varargs_slice = "";
+	} else {
+		varargs_slice = format(
+			"var %s = Array.prototype.slice.call(arguments, %d);\n",
+			lambda.rest.name,
+			lambda.args.count()
+		);
+	}
+
+	body = analyze.sequence(
+		lambda.body,
+		env,
+		function (x) { return format("return %s;", x); }
+	).join(";\n");
+
+	tail = "\n}";
+
+	return "(" + head + varargs_slice + body + tail + ")";
+};
+
+// TODO def can probably be defined in terms of set!
+analyze.def = function (form, env) {
+	assert.equal(3, form.count(), "Invalid def form: " + form);
+
+
+	var symbol = analyze(form.second(), env),
+		value = analyze(form.third(), env);
+
+	if (value instanceof Macro) {
+		env[symbol] = value;
+		return format("// Defined macro %s", symbol.name);
+	}
+
+	if (value instanceof Lambda) {
+		env[symbol] = value;
+		return format("var %s = %s", symbol, compile_lambda(value, env));
+	}
+
+	return format("var %s = %s", symbol, value);
+};
+
+analyze.set = function (form, env) {
+	assert.equal(3, form.count(), "Invalid set! form: " + form);
+
+	var symbol = analyze(form.second(), env),
+		value = analyze(form.third(), env);
+
+	if (value instanceof Macro) {
+		env[symbol] = value;
+		return format("// set macro %s", symbol.name);
+	}
+
+	if (value instanceof Lambda) {
+		env[symbol] = value;
+		return format("%s = %s", symbol, compile_lambda(value, env));
+	}
+
+	return format("%s = %s", symbol, value);
+};
+
+var destructure_args = function (args) {
+	var varargs_point, named, rest, i,
+		varargs_symbol = new Symbol("&"),
+		arg;
+
+	assert.equal(true, args instanceof Vector, "Invalid arguments: " + args);
+
+	varargs_point = -1;
+	for (i = 0; i < args.count(); i = i + 1) {
+		arg = args.nth(i);
+		assert.equal(true, arg instanceof Symbol, format("Invalid argument: %d. Expected symbol, got: %s", i, arg));
+		if (varargs_symbol.equal(arg)) {
+			varargs_point = i;
+		}
+	}
+
+	if (varargs_point === -1) {
+		named = args;
+		rest = undefined;
+	} else {
+		assert.equal(args.count(), varargs_point + 2, "Exactly one symbol must follow '&' in a varargs declaration.");
+		named = args.take(varargs_point);
+		rest = args.nth(varargs_point + 1);
+	}
+
+	return {named: named, rest: rest};
+};
+exports.destructure_args = destructure_args;
+
+analyze.lambda = function (form, env) {
+	assert.equal(true, 2 <= form.count(), "Invalid fn form: " + form);
+	var args = form.second(),
+		destructured,
+		lambda;
+
+	destructured = destructure_args(args);
+
+	return new Lambda(destructured.named, destructured.rest, form.next().next(), env);
+};
+
+analyze.macro = function (form, env) {
+	assert.equal(true, 2 <= form.count(), "Invalid macro form: " + form);
+
+	var args = form.second(),
+		destructured,
+		macro;
+
+	destructured = destructure_args(args);
+
+	return new Macro(destructured.named, destructured.rest, form.next().next(), env);
 };
 
 var syntax_expand = function (form, env) {
@@ -113,25 +255,25 @@ var syntax_expand = function (form, env) {
 	}
 
 	if (
-		form.length === 2
+		form.count() === 2
 		&&
-		equal(form[0], new Symbol("unquote"))
+		equal(form.first(), new Symbol("unquote"))
 	) {
-		return analyze(form[1], env);
+		return analyze(form.second(), env);
 	}
 
 	result = [];
-	for (i = 0; i < form.length; i = i + 1) {
-		subform = form[i];
+	for (i = 0; i < form.count(); i = i + 1) {
+		subform = form.nth(i);
 
 		if (
 			!is_atom(subform)
 			&&
-			subform.length === 2
+			subform.count() === 2
 			&&
-			equal(subform[0], new Symbol("unquote-splicing"))
+			equal(subform.first(), new Symbol("unquote-splicing"))
 		) {
-			analysis = analyze(subform[1], env);
+			analysis = analyze(subform.second(), env);
 			result = result.concat(analysis);
 		} else {
 			expanded = syntax_expand(subform, env);
@@ -139,70 +281,13 @@ var syntax_expand = function (form, env) {
 		}
 	}
 
-	return result;
+	return format("new List([%s])", result.join(", "));
 };
 
 analyze.syntax_quote = function (form, env) {
-	assert.equal(form.length, 2, "Invalid syntax-quote form: " + form);
-	var result = syntax_expand(form[1], env);
+	assert.equal(form.count(), 2, "Invalid syntax-quote form: " + form);
+	var result = syntax_expand(form.second(), env);
 	return result;
-};
-
-analyze.if = function (form, env) {
-	assert.equal(true, 3 <= form.length <= 4, "Invalid if form: " + form);
-	var test_form, then_form, else_form;
-
-	test_form = analyze(form[1], env);
-	then_form = analyze(form[2], env);
-
-	if (form.length === 4) {
-		else_form = analyze(form[3], env);
-	} else {
-		else_form = "undefined";
-	}
-
-	return format("%s ? %s\n\t: %s", test_form, then_form, else_form);
-};
-
-analyze.def = function (form, env) {
-	assert.equal(3, form.length, "Invalid def form: " + form);
-
-	var name = analyze(form[1], env),
-		value = analyze(form[2], env);
-
-	if (value instanceof Macro) {
-		env[name] = value;
-		return format("// Defined macro %s", name);
-	}
-
-	return format("var %s = %s", name, value);
-};
-
-analyze.set = function (form, env) {
-	assert.equal(3, form.length, "Invalid set! form: " + form);
-
-	var name = analyze(form[1], env),
-		value = analyze(form[2], env);
-
-	return format("%s = %s", name, value);
-};
-
-analyze.lambda = function (form, env) {
-	assert.equal(true, 2 <= form.length, "Invalid fn form: " + form);
-	var args = form[1],
-		destructured = interpreter.destructure_args(args),
-		lambda;
-
-	lambda = new Lambda(destructured.named, destructured.rest, form.slice(2), env);
-
-	return analyze.application(lambda, env);
-};
-
-analyze.macro = function (form, env) {
-	assert.equal(true, 3 <= form.length, "Invalid macro form: " + form);
-	var macro = interpreter.analyze(form)(env);
-
-	return macro;
 };
 
 analyze.sequence = function (forms, env, last_formatter) {
@@ -210,15 +295,16 @@ analyze.sequence = function (forms, env, last_formatter) {
 		last_formatter = identity;
 	}
 
-	switch(forms.length) {
+	switch(forms.count()) {
 		case 0:
-			return [last_formatter("")];
+			return new List([last_formatter("")]);
 		case 1:
-			return [last_formatter(analyze(forms[0], env))];
+			return new List([last_formatter(analyze(forms.first(), env))]);
 		default:
-			var result = analyze.sequence(forms.slice(1), env, last_formatter);
-			result.unshift(analyze(forms[0], env));
-			return result;
+			var head = analyze(forms.first(), env),
+				body = analyze.sequence(forms.next(), env, last_formatter);
+
+			return body.cons(head);
 	}
 };
 
@@ -226,7 +312,7 @@ var primitives = {};
 primitives.make_infix_function = function (operand_string, arity) {
 	return function (fn_args, env) {
 		if (typeof(arity) !== "undefined") {
-			assert.equal(arity, fn_args.length, "Invalid number of args.");
+			assert.equal(arity, fn_args.count(), "Invalid number of args.");
 		}
 
 		return format("(%s)", analyze.sequence(fn_args, env).join(operand_string));
@@ -238,25 +324,32 @@ primitives[new Symbol("+")]				 = primitives.make_infix_function(" + ");
 primitives[new Symbol("-")]				 = primitives.make_infix_function(" - ");
 primitives[new Symbol("*")]				 = primitives.make_infix_function(" * ");
 primitives[new Symbol("/")]				 = primitives.make_infix_function(" / ");
-primitives[new Symbol("=")]				 = primitives.make_infix_function(" === ");
 primitives[new Symbol("and")]			 = primitives.make_infix_function(" && ");
 primitives[new Symbol("or")]			 = primitives.make_infix_function(" || ");
 primitives[new Symbol("instanceof?")]	 = primitives.make_infix_function(" instanceof ", 2);
 primitives[new Symbol("identical?")]	 = primitives.make_infix_function(" === "); // TODO is this right?
 
+primitives[new Symbol("=")] = function (fn_args, env) {
+	assert.equal(2, fn_args.count(), "Invalid arguments to =: " + fn_args);
+	return format(
+		"(equal(%s,%s) ? new CrispBoolean('true') : new CrispBoolean('false'))",
+		fn_args.first(),
+		fn_args.second()
+	);
+};
 primitives[new Symbol("not")] = function (fn_args, env) {
-	assert.equal(1, fn_args.length, "Invalid arguments to not: " + fn_args);
-	return format("!%s", analyze(fn_args[0], env));
+	assert.equal(1, fn_args.count(), "Invalid arguments to not: " + fn_args);
+	return format("!%s", analyze(fn_args.first(), env));
 };
 primitives[new Symbol("export")] = function (fn_args, env) {
-	assert.equal(1, fn_args.length, "Invalid arguments to export: " + fn_args);
-	var name = analyze(fn_args[0], env);
+	assert.equal(1, fn_args.count(), "Invalid arguments to export: " + fn_args);
+	var name = analyze(fn_args.first(), env);
 	return format("exports.%s = %s", name, name);
 };
 primitives[new Symbol("typeof")] = function (fn_args, env) {
-	assert.equal(1, fn_args.length, "Invalid arguments to typeof: " + fn_args);
-	var name = analyze(fn_args[0], env);
-	return format("typeof %s", analyze(fn_args[0], env));
+	assert.equal(1, fn_args.count(), "Invalid arguments to typeof: " + fn_args);
+	var name = analyze(fn_args.first(), env);
+	return format("typeof %s", analyze(fn_args.first(), env));
 };
 primitives[new Symbol("throw")] = function (fn_args, env) {
 	return format("(function () { throw %s; }())", analyze.sequence(fn_args, env).join(" + "));
@@ -272,45 +365,44 @@ analyze.application = function (form, env) {
 		property_access = /^\.-(.*)/,
 		method_access = /^\.(.*)/,
 		match,
-		lambda, head, varargs_slice, body, tail,
+		lambda, head, arglist, varargs_slice, body, tail,
 		expanded, result;
 
-	if (form instanceof Lambda) {
-		lambda = form;
-		head = format("function (%s) {\n", lambda.args.join(", "));
 
-		if (typeof lambda.rest === 'undefined') {
-			varargs_slice = "";
-		} else {
-			varargs_slice = format(
-				"var %s = Array.prototype.slice.call(arguments, %d);\n",
-				lambda.rest,
-				lambda.args.length
-			);
-		}
+	fn_name = analyze(form.first(), env);
+	fn_args = form.next();
 
-		body = analyze.sequence(
-			lambda.body,
-			env,
-			function (x) { return format("return %s;", x); }
-		).join(";\n");
-
-		tail = "\n}";
-
-		return head + varargs_slice + body + tail;
+	if (fn_name instanceof Lambda) {
+		return format("(%s(%s))", compile_lambda(fn_name, env), fn_args.join(","));
 	}
-
-	fn_name = form[0];
-	fn_args = form.slice(1);
 
 	if (is_atom(fn_name)) {
 		env_lookup = env[fn_name];
 		if (env_lookup instanceof Macro) {
+			console.log(format("MACRO NAME: %s", fn_name));
+			console.log(format("MACRO ARGS: %s", fn_args));
 			macro = env_lookup;
-			sub_env = macro.env.extend_by(fn_name, macro.args, macro.rest, fn_args);
-			expanded = macro.body(sub_env);
-			result = analyze(expanded, env);
-			return result;
+
+			sub_env = macro.env.extend_by(fn_name, macro.args, macro.rest, analyze.sequence(fn_args, env));
+			var new_lambda = new Lambda(macro.args, macro.rest, macro.body, sub_env);
+			var new_form = fn_args.cons(new_lambda);
+			console.log(format("New form: %s", new_form.next()));
+			var code_to_run = analyze.application(new_form, env);
+			console.log(format("Code to run: %s", code_to_run));
+			var run_code = eval(code_to_run);
+			console.log(format("Run code: %s", run_code));
+			console.log(format("Output of that: %s", analyze(run_code, env)));
+			return analyze(run_code, env);
+
+
+			// var code_to_run =
+
+			// console.log(format("New form: %s", new_form));
+			// console.log(format("BODY: %s", macro.body));
+			// console.log(format("EXPANDED: %s", expanded));
+			// console.log(format("AN: %s", analyze.application(new_lambda, env)));
+			// result = analyze(expanded, env);
+			return "// KAJ macro invoked";
 		}
 
 		// Interop.
@@ -321,14 +413,14 @@ analyze.application = function (form, env) {
 
 		match = property_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
-			assert.equal(1, fn_args.length, "Invalid arguments to property access: " + fn_args);
-			return format("%s.%s", analyze(fn_args[0], env), match[1]);
+			assert.equal(1, fn_args.count(), "Invalid arguments to property access: " + fn_args);
+			return format("%s.%s", analyze(fn_args.first(), env), match[1]);
 		}
 
 		match = method_access.exec(fn_name.name);
 		if (match) { // TODO might move this to the symbol code...
-			assert.equal(true, fn_args.length >= 1, "Invalid arguments to method access: " + fn_args);
-			return format("%s.%s(%s)", analyze(fn_args[0], env), match[1], analyze.sequence(fn_args.slice(1), env).join());
+			assert.equal(true, fn_args.count() >= 1, "Invalid arguments to method access: " + fn_args);
+			return format("%s.%s(%s)", analyze(fn_args.first(), env), match[1], analyze.sequence(fn_args.next(), env).join());
 		}
 
 		// Primitive.
@@ -338,14 +430,25 @@ analyze.application = function (form, env) {
 		}
 
 		// We should be doing some compile-time checking here.
-		return format("%s(%s)", fn_name, analyze.sequence(fn_args, env).join());
+		assert.equal(true, fn_name instanceof Symbol, format("Trying to invoke a non-symbol argument name: %j", fn_name));
+		return format("%s(%s)", fn_name.name, analyze.sequence(fn_args, env).join());
 	}
 
 	return format("((%s)(%s))", analyze(fn_name, env), analyze.sequence(fn_args, env).join());
 };
 
 var preamble = function () {
-	return ["/* jslint indent: 0 */", "// START", '"use strict";\n'];
+	return [
+		"// START",
+		'"use strict";\n',
+		"var Keyword = require('../lib/types').Keyword;",
+		"var List = require('../lib/types').List;",
+		"var Symbol = require('../lib/types').Symbol;",
+		"var Vector = require('../lib/types').Vector;",
+		"var CrispString = require('../lib/types').CrispString;",
+		"var CrispBoolean = require('../lib/types').CrispBoolean;",
+		"var equal = require('deep-equal');",
+	];
 };
 
 var postamble = function () {
@@ -366,6 +469,9 @@ var compile = function (string, env) {
 
 		if (read.type !== 'WHITESPACE') {
 			analyzed = analyze(form, env);
+			if (analyzed instanceof Lambda) {
+				analyzed = compile_lambda(analyzed, env);
+			}
 			result.push(analyzed + ";\n");
 		}
 	}
@@ -403,9 +509,11 @@ var compile_io = function (input, output, env, callback) {
 exports.compile_io = compile_io;
 
 var base_environment = new Environment();
-base_environment[new Symbol("nil")] = void(0);
-base_environment[new Symbol("true")] = true;
-base_environment[new Symbol("false")] = false;
+base_environment.require = require;
+// TODO I think these are only required by the interpreter, not the compiler.
+base_environment[new Symbol("nil")] = undefined;
+base_environment[new Symbol("true")] = new Symbol("false");
+base_environment[new Symbol("false")] = new Symbol("false");
 base_environment[new Symbol("=")] = equal;
 base_environment[new Symbol("typeof")] = function typeof_internal(arg) {
 	return typeof arg;
@@ -464,12 +572,47 @@ base_environment[new Symbol("/")] = function divide(head) {
 	return result;
 };
 base_environment[new Symbol("vec")] = function vec() {
-	return arguments;
+	return new Vector(Array.prototype.slice.call(arguments, 0));
 };
+base_environment[new Symbol("first")] = function first(coll) {
+	assert.equal(true, arguments.length <= 1, "first called with incorrect number of arguments." + arguments.length);
+	if (typeof coll === 'undefined') {
+		return undefined;
+	}
+
+	assert.equal(true, coll instanceof Array, "first called with an argument that is not a collection" );
+	if (coll.length > 0) {
+		return coll[0];
+	}
+};
+base_environment[new Symbol("second")] = function second(coll) {
+	assert.equal(true, arguments.length <= 1, "second called with incorrect number of arguments." + arguments.length);
+	if (typeof coll === 'undefined') {
+		return undefined;
+	}
+
+	assert.equal(true, coll instanceof Array, "second called with an argument that is not a collection" );
+	if (coll.length > 1) {
+		return coll[1];
+	}
+};
+base_environment[new Symbol("rest")] = function rest(coll) {
+	assert.equal(true, arguments.length <= 1, "rest called with incorrect number of arguments." + arguments.length);
+	if (typeof coll === 'undefined') {
+		return undefined;
+	}
+
+	assert.equal(true, coll instanceof Array, "rest called with an argument that is not a collection" );
+	if (coll.length > 1) {
+		return coll.slice(1);
+	}
+};
+/* TODO Core libs.
 (function () {
 	var data = fs.readFileSync("src/macros.crisp", {encoding: "utf-8"}),
 		compiled = compile_string(data, base_environment);
 }());
+*/
 exports.base_environment = base_environment;
 
 var usage = "USAGE TODO";
