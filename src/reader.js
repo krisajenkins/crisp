@@ -6,7 +6,7 @@ var Vector = require('./types').Vector;
 var List = require('./types').List;
 var CrispString = require('./types').CrispString;
 var CrispBoolean = require('./types').CrispBoolean;
-var CrispNumber = require('../lib/types').CrispNumber;
+var CrispNumber = require('./types').CrispNumber;
 
 function make_parser(regexp, type) {
 	return function (string) {

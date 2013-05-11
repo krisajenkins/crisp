@@ -135,16 +135,44 @@ primitives[new Symbol("-")] = function (args) {return args.join(" - ");};
 primitives[new Symbol("*")] = function (args) {return args.join(" * ");};
 primitives[new Symbol("/")] = function (args) {return args.join(" / ");};
 primitives[new Symbol("=")] = function (args) {return format("equal(%s)", args.join(", "));};
+primitives[new Symbol("or")] = function (args) {return args.join(" || ");};
+primitives[new Symbol("and")] = function (args) {return args.join(" and ");};
+primitives[new Symbol("instanceof")] = function (args) {
+	assert.equal(2, args.count(), "instanceof takes exactly two arguments. Got: " + args.count);
+	return args.join(" instanceof ");
+};
+primitives[new Symbol("typeof")] = function (args) {
+	assert.equal(1, args.count(), "typeof takes exactly one arguments. Got: " + args.count);
+	return "typeof " + args.first();
+};
+
+primitives[new Symbol("not")] = function (args) {
+	assert.equal(1, args.count(), "not takes exactly one arguments. Got: " + args.count);
+	return "!" + args.first();
+};
 
 var macros = {};
 
 var compile = function compile(form, env) {
-	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded;
+	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded, match;
 
 	if (form instanceof CrispNumber)  { return form.toString(); }
 	if (form instanceof CrispBoolean) { return form.toString(); }
 	if (form instanceof CrispString)  { return form.toString(); }
-	if (form instanceof Symbol)       { return form.toString(); }
+	if (form instanceof Symbol) {
+		expanded = form.toString();
+
+		match = /(.*)\?$/.exec(expanded);
+		if (match) {
+			expanded = "is_" + match[1];
+		}
+
+		expanded = expanded.replace(/-/g, "_");
+		expanded = expanded.replace(/!/g, "BANG");
+
+		return format("%s", expanded);
+	}
+
 	if (form instanceof Vector) {
 		return format("[%s]", form.items.join(", "));
 	}
