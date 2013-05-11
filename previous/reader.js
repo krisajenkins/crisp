@@ -2,6 +2,11 @@
 
 var Symbol = require('./types').Symbol;
 var Keyword = require('./types').Keyword;
+var Vector = require('./types').Vector;
+var List = require('./types').List;
+var CrispString = require('./types').CrispString;
+var CrispBoolean = require('./types').CrispBoolean;
+var CrispNumber = require('../lib/types').CrispNumber;
 
 function make_parser(regexp, type) {
 	return function (string) {
@@ -28,6 +33,7 @@ var match_close_brace		= make_parser(/^\}/, 'CLOSE_BRACE');
 var match_number			= make_parser(/^-?\d+(\.\d+)?/, 'NUMBER');
 var match_string			= make_parser(/^"([^"]*)"/m, 'STRING');
 var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
+var match_boolean			= make_parser(/^(true|false)\b/, 'BOOLEAN');
 var match_symbol			= make_parser(/^[\w\._\/\-\+!=?&\*]+/, 'SYMBOL');
 var match_whitespace		= make_parser(/^\s+/, 'WHITESPACE');
 var match_quote				= make_parser(/^'/, 'QUOTE');
@@ -73,7 +79,7 @@ function read_string(string) {
 	match = match_quote(string);
 	if (match) {
 		match = read_string(match.remainder);
-		match.result = [new Symbol("quote"), match.result];
+		match.result = new List([new Symbol("quote"), match.result]);
 		return match;
 	}
 
@@ -82,7 +88,7 @@ function read_string(string) {
 	match = match_syntax_quote(string);
 	if (match) {
 		match = read_string(match.remainder);
-		match.result = [new Symbol("syntax-quote"), match.result];
+		match.result = new List([new Symbol("syntax-quote"), match.result]);
 		return match;
 	}
 
@@ -90,7 +96,7 @@ function read_string(string) {
 	match = match_unquote_splicing(string);
 	if (match) {
 		match = read_string(match.remainder);
-		match.result = [new Symbol("unquote-splicing"), match.result];
+		match.result = new List([new Symbol("unquote-splicing"), match.result]);
 		return match;
 	}
 
@@ -98,7 +104,7 @@ function read_string(string) {
 	match = match_unquote(string);
 	if (match) {
 		match = read_string(match.remainder);
-		match.result = [new Symbol("unquote"), match.result];
+		match.result = new List([new Symbol("unquote"), match.result]);
 		return match;
 	}
 
@@ -106,6 +112,7 @@ function read_string(string) {
 	match = match_open_parenthesis(string);
 	if (match) {
 		match = read_until(match_close_parenthesis, match.remainder);
+		match.result = new List(match.result);
 		return match;
 	}
 
@@ -113,7 +120,7 @@ function read_string(string) {
 	match = match_open_bracket(string);
 	if (match) {
 		match = read_until(match_close_bracket, match.remainder);
-		match.result.unshift(new Symbol("vec"));
+		match.result = new Vector(match.result);
 		return match;
 	}
 
@@ -128,14 +135,21 @@ function read_string(string) {
 	// Numbers.
 	match = match_number(string);
 	if (match) {
-		match.result = parseFloat(match.result);
+		match.result = new CrispNumber(parseFloat(match.result));
+		return match;
+	}
+
+	// Boolean.
+	match = match_boolean(string);
+	if (match) {
+		match.result = new CrispBoolean(match.result);
 		return match;
 	}
 
 	// Strings.
 	match = match_string(string);
 	if (match) {
-		match.result = match.groups[0];
+		match.result = new CrispString(match.groups[0]);
 		return match;
 	}
 

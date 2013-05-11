@@ -64,8 +64,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-beautify');
 
 	grunt.registerMultiTask('crisp', "Compile crisp files to JavaScript", function () {
-		var compiler = require('./previous/compiler'),
-			env = compiler.base_environment.extend();
+		var compiler = require('./src/compiler'),
+			env = {};
 
 		grunt.log.writeln("Compiling crisps:");
 		this.files.forEach(function (file) {
@@ -87,8 +87,8 @@ module.exports = function(grunt) {
 	});
 
 	// Default task(s).
-	grunt.registerTask('compile', ['clean:build', 'copy:build', 'crisp']);
+	grunt.registerTask('compile', ['clean:build', 'copy:build']);
+	grunt.registerTask('approve', ['clean:approve', 'copy:approve', 'default']);
 	grunt.registerTask('test', ['cafemocha']);
 	grunt.registerTask('default', ['compile', 'test']);
-	grunt.registerTask('approve', ['clean:approve', 'copy:approve', 'default']);
 };
