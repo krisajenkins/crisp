@@ -21,10 +21,6 @@ CrispBoolean.prototype.toString = function () {
 	return this.value;
 };
 
-CrispBoolean.prototype.toQuote = function () {
-	return ("new CrispBoolean(" + this.value + ")");
-};
-
 exports.CrispBoolean = CrispBoolean;
 
 var CrispNumber = function (value) {
@@ -37,10 +33,6 @@ CrispNumber.prototype.type = "crisp.types/number";
 
 CrispNumber.prototype.equal = function (other) {
 	return ((this.type === other.type) && (this.value === other.value));
-};
-
-CrispNumber.prototype.toQuote = function () {
-	return "new CrispNumber('" + this.value + "')";
 };
 
 CrispNumber.prototype.toString = function () {
@@ -65,10 +57,6 @@ CrispString.prototype.toString = function () {
 	return format("%j", this.value);
 };
 
-CrispString.prototype.toQuote = function () {
-	return ("new CrispString('" + this.value + "')");
-};
-
 exports.CrispString = CrispString;
 
 var Symbol = function (name) {
@@ -81,10 +69,6 @@ Symbol.prototype.type = "crisp.types/symbol";
 
 Symbol.prototype.equal = function (other) {
 	return ((this.type === other.type) && (this.name === other.name));
-};
-
-Symbol.prototype.toQuote = function () {
-	return ("new Symbol('" + this.name + "')");
 };
 
 Symbol.prototype.toString = function () {
@@ -102,10 +86,6 @@ Keyword.prototype.type = "crisp.types/keyword";
 
 Keyword.prototype.equal = function (other) {
 	return ((this.type === other.type) && (this.name === other.name));
-};
-
-Keyword.prototype.toQuote = function () {
-	return ("new Keyword('" + this.name + "')");
 };
 
 Keyword.prototype.toString = function () {
@@ -170,10 +150,6 @@ List.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
 
-List.prototype.toQuote = function () {
-	return format("new List([%s])", this.items.map(function (x) { return x.toQuote(); }).join(", "));
-};
-
 List.prototype.toString = function () {
 	return format("[%s]", this.items.map(function (x) { return x.toString(); }).join(", "));
 };
@@ -216,10 +192,6 @@ Vector.prototype.drop = function (n) {
 };
 Vector.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
-};
-
-Vector.prototype.toQuote = function () {
-	return format("new Vector([%s])", this.items.map(function (x) { return x.toQuote(); }).join(", "));
 };
 
 Vector.prototype.toString = function () {

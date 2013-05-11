@@ -14,6 +14,7 @@ var Environment = require('./runtime').Environment;
 var Quote = require('./runtime').Quote;
 var SyntaxQuote = require('./runtime').SyntaxQuote;
 var Unquote = require('./runtime').Unquote;
+var UnquoteSplicing = require('./runtime').UnquoteSplicing;
 var CrispIf = require('./runtime').CrispIf;
 var CrispDef = require('./runtime').CrispDef;
 var Lambda = require('./runtime').Lambda;
@@ -69,10 +70,12 @@ var syntax_expand = function (form, env) {
 	if (form instanceof List) {
 		if (equal(form.first(), new Symbol("unquote"))) {
 			assert.equal(2, form.count(), "Unquote takes exactly one argument.");
-			// console.log("Unquote", form);
-			var result = new Unquote(analyse(form.second(), env));
-			// console.log("Unquote", form, "to", result);
-			return result;
+			return new Unquote(analyse(form.second(), env));
+		}
+
+		if (equal(form.first(), new Symbol("unquote-splicing"))) {
+			assert.equal(2, form.count(), "UnquoteSplicing takes exactly one argument.");
+			return new UnquoteSplicing(analyse(form.second(), env));
 		}
 
 		return form.map(function (f) { return syntax_expand(f, env); });
@@ -131,14 +134,20 @@ primitives[new Symbol("+")] = function (args) {return args.join(" + ");};
 primitives[new Symbol("-")] = function (args) {return args.join(" - ");};
 primitives[new Symbol("*")] = function (args) {return args.join(" * ");};
 primitives[new Symbol("/")] = function (args) {return args.join(" / ");};
+primitives[new Symbol("=")] = function (args) {return format("equal(%s)", args.join(", "));};
+
+var macros = {};
 
 var compile = function compile(form, env) {
-	var head, args, stored, compiled_body, compiled_args;
+	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded;
 
 	if (form instanceof CrispNumber)  { return form.toString(); }
 	if (form instanceof CrispBoolean) { return form.toString(); }
 	if (form instanceof CrispString)  { return form.toString(); }
 	if (form instanceof Symbol)       { return form.toString(); }
+	if (form instanceof Vector) {
+		return format("[%s]", form.items.join(", "));
+	}
 
 	if (form instanceof Quote) {
 		return compile.quote(form.item, env);
@@ -151,27 +160,35 @@ var compile = function compile(form, env) {
 	if (form instanceof CrispIf) {
 		return format(
 			"%s ? %s : %s",
-			form.test_form,
-			form.then_form,
-			form.else_form
+			compile(form.test_form, env),
+			compile(form.then_form, env),
+			compile(form.else_form, env)
 		);
 	}
 
 	if (form instanceof CrispDef) {
+		compiled_name = compile(form.name, env);
+		compiled_value = compile(form.value, env);
+
+		if (
+			form.value instanceof Macro
+		) {
+			macros[compiled_name] = eval(compiled_value);
+			return format("// Defined Macro: %s", compiled_name);
+		}
+
 		return format(
 			"var %s = %s",
-			compile(form.name, env),
-			compile(form.value, env)
+			compiled_name,
+			compiled_value
 		);
 	}
 
-	if (form instanceof Macro) {
-		console.log("Compiling macro");
-		return format("// KAJ");
-	}
-
-	if (form instanceof Lambda) {
-		compiled_body = compile.sequence(form.body, form.env);
+	if (
+		form instanceof Macro
+		||
+		form instanceof Lambda
+	) {
 		return format(
 			"(function (%s) {\n\treturn %s;\n})",
 			form.args,
@@ -185,6 +202,13 @@ var compile = function compile(form, env) {
 
 		compiled_args = args.map(function (f) { return compile(f, env); });
 
+		// TODO True is expanding into the string, rather than the symbol. Hmm...
+		stored = macros[head];
+		if (typeof stored !== 'undefined') {
+			expanded = stored.apply(env, args.items); // TODO, in the apply call, what should this be?
+			return compile(analyse(expanded, env), env);
+		}
+
 		stored = primitives[head];
 		if (typeof stored !== 'undefined') {
 			return format("(%s)", stored(compiled_args));
@@ -193,7 +217,7 @@ var compile = function compile(form, env) {
 		return format("%s(%s)", compile(head, env), compiled_args.join(", "));
 	}
 
-	throw new Error(format("Unhandled compilation for form: %j", form));
+	throw new Error(format("Unhandled compilation for form: %j (%s)", form, typeof form));
 };
 
 compile.sequence = function (forms, env) {
@@ -234,7 +258,21 @@ compile.quote = function (form, env) {
 
 compile.syntax_quote = function (form, env) {
 	if (form instanceof List) {
-		return format("new List([%s])", form.map(function (f) { return compile.syntax_quote(f, env); }).join(", "));
+		// TODO We can't map. We Must peek.
+		var i, items = [], sub_item, compiled_sub_item;
+		for (i = 0; i < form.count(); i++) {
+			sub_item = form.nth(i);
+
+			// if (sub_item instanceof UnquoteSplicing) {
+			// 	compiled_sub_item = compile.sequence(sub_item.item, env);
+			// 	items = items.concat(compiled_sub_item);
+			// } else {
+			// }
+				compiled_sub_item = compile.syntax_quote(sub_item, env);
+				items.push(compiled_sub_item);
+		}
+
+		return format("new List([%s])", items.join(", "));
 	}
 
 	if (form instanceof Vector) {
@@ -245,16 +283,80 @@ compile.syntax_quote = function (form, env) {
 		return compile(form.item, env);
 	}
 
+	if (form instanceof UnquoteSplicing) {
+		// TODO
+		return compile(form.item, env);
+	}
+
 	return compile.quote_atom(form, env);
 };
 
+var preamble = function () {
+	return [
+		"// START",
+		'"use strict";\n',
+		"var CrispBoolean = require('../lib/types').CrispBoolean;",
+		"var CrispString = require('../lib/types').CrispString;",
+		"var CrispNumber = require('../lib/types').CrispNumber;",
+		"var Keyword = require('../lib/types').Keyword;",
+		"var List = require('../lib/types').List;",
+		"var Symbol = require('../lib/types').Symbol;",
+		"var Vector = require('../lib/types').Vector;",
+		"var equal = require('deep-equal');",
+		"",
+		"",
+	].join("\n");
+};
+
+var postamble = function () {
+	return [
+		"// END",
+		"",
+	].join("\n");
+};
+
 var compile_string = function (input, env) {
-	var read, analysis, compiled, output;
+	var read, analysis, compiled, result;
 
-	read = read_string(input);
-	analysis = analyse(read.result, env);
-	compiled = compile(analysis, env);
+	result = [];
 
-	return compiled + ";";
+	while (input !== "") {
+		read = read_string(input);
+		input = read.remainder;
+
+		if (read.type !== "WHITESPACE") {
+			analysis = analyse(read.result, env);
+			compiled = compile(analysis, env);
+			result.push(compiled + ";\n");
+		}
+	}
+
+	return result.join("\n") + "\n";
 };
 exports.compile_string = compile_string;
+
+// TODO Make this asynchronous. (Easy, but making Grunt respect that is harder.)
+var compile_io = function (input, output, env, callback) {
+	var data = fs.readFileSync(input, {encoding: "utf-8"}),
+		compiled = compile_string(data, env),
+		full = preamble() + compiled + postamble();
+
+
+	fs.writeFileSync(output, full);
+};
+exports.compile_io = compile_io;
+
+var usage = "USAGE TODO";
+
+var main = function () {
+	assert.equal(process.argv.length, 4, usage);
+	var input	 = process.argv[2],
+		output	 = process.argv[3],
+		env		 = {};
+
+	compile_io(input, output, env, function () { console.log("Done"); });
+};
+
+if (require.main === module) {
+    main();
+}

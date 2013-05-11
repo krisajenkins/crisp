@@ -17,6 +17,7 @@ var Quote = require('../lib/runtime').Quote;
 var Unquote = require('../lib/runtime').Unquote;
 var SyntaxQuote = require('../lib/runtime').SyntaxQuote;
 var Procedure = require('../lib/runtime').Procedure;
+var equal = require('../lib/runtime').equal;
 
 var compile_string = require('../lib/newc').compile_string;
 
@@ -56,16 +57,18 @@ describe('compiler', function () {
 
 	beforeEach(function () {
 		env = {};
-		env.CrispNumber = CrispNumber;
-		env.CrispString = CrispString;
-		env.CrispBoolean = CrispBoolean;
-		env.List = List;
-		env.Vector = Vector;
-		env.Symbol = Symbol;
-		env.Quote = Quote;
-		env.Unquote = Unquote;
-		env.SyntaxQuote = SyntaxQuote;
-		env.Procedure = Procedure;
+		env.CrispNumber		= CrispNumber;
+		env.CrispString		= CrispString;
+		env.CrispBoolean	= CrispBoolean;
+		env.List			= List;
+		env.Vector			= Vector;
+		env.Symbol			= Symbol;
+		env.Quote			= Quote;
+		env.Unquote			= Unquote;
+		env.SyntaxQuote		= SyntaxQuote;
+		env.Procedure		= Procedure;
+		env.equal			= equal;
+		env.nil				= undefined;
 	});
 
 	it('Numbers', function () {
@@ -89,6 +92,8 @@ describe('compiler', function () {
 	it('If', function () {
 		compilesTo("(if true 1 2)", 1, env);
 		compilesTo("(if false 1 2)", 2, env);
+		compilesTo("(if (= 3 3)  (+ 1 2) (+ 3 4))", 3, env);
+		compilesTo("(if (= 3 -3) (+ 1 2) (+ 3 4))", 7, env);
 	});
 
 	it('Application', function () {
@@ -153,9 +158,35 @@ describe('compiler', function () {
 		);
 	});
 
-	// it('Macros', function () {
-	// 	runIn("(def unless (macro [test body] `(if ~test nil ~body)))", true, env);
-	// 	compilesTo("(unless true 1)", undefined, env);
-	// 	compilesTo("(unless false 5)", 5, env);
+	// it('Unquote-slicing', function () {
+	// 	runIn("(def b '(1 2 3))", false, env);
+
+	// 	kompilesTo(
+	// 		"`(a ~@b)",
+	// 		new List([
+	// 			new Symbol("a"),
+	// 			1,
+	// 			2,
+	// 			3
+	// 		]),
+	// 		env
+	// 	);
+
+	// 	compilesTo(
+	// 		"`[a ~@b]",
+	// 		new Vector([
+	// 			new Symbol("a"),
+	// 			1,
+	// 			2,
+	// 			3
+	// 		]),
+	// 		env
+	// 	);
 	// });
+
+	it('Macros', function () {
+		runIn("(def unless (macro [test body] `(if ~test nil ~body)))", false, env);
+		compilesTo("(unless true 1)", undefined, env);
+		compilesTo("(unless false 5)", 5, env);
+	});
 });

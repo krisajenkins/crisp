@@ -45,14 +45,7 @@ var CrispIf = function (test_form, then_form, else_form) {
 	this.else_form = else_form;
 	return this;
 };
-CrispIf.prototype.toQuote = function () {
-	return format(
-		"new CrispIf(%s, %s, %s)",
-		this.test_form.toQuote(),
-		this.then_form.toQuote(),
-		this.else_form.toQuote()
-	);
-};
+
 CrispIf.prototype.toString = function () {
 	return format(
 		"%s ? %s : %s",
@@ -69,13 +62,7 @@ var CrispDef = function (name, value) {
 	this.value = value;
 	return this;
 };
-CrispDef.prototype.toQuote = function () {
-	return format(
-		"new CrispDef(%s, %s)",
-		this.name.toQuote(),
-		this.value.toQuote()
-	);
-};
+
 CrispDef.prototype.toString = function () {
 	return format(
 		"var %s = %s;",
@@ -92,9 +79,6 @@ var Procedure = function (forms) {
 	return this;
 };
 
-Procedure.prototype.toQuote = function () {
-	return "new Procedure(" + this.forms + ")";
-};
 Procedure.prototype.toString = function () {
 	return format("[ Procedure %s]", this.forms);
 };
@@ -116,19 +100,6 @@ var Macro = function (args, rest, body) {
 	this.rest = rest;
 	this.body = body;
 	return this;
-};
-
-Macro.prototype.toString = function () {
-	return this.toQuote();
-};
-
-Macro.prototype.toQuote = function () {
-	return format(
-		"new Macro(%s, %s, %s, %s)",
-		this.args.toQuote(),
-		this.rest.toQuote(),
-		this.body.toQuote()
-	);
 };
 
 exports.Macro = Macro;
@@ -180,28 +151,12 @@ var Quote = function (item) {
 	return this;
 };
 
-Quote.prototype.toString = function () {
-	return this.item.toQuote();
-};
-
-Quote.prototype.toQuote = function () {
-	return format("new Quote(%s)", this.item.toQuote());
-};
-
 exports.Quote = Quote;
 
 var SyntaxQuote = function (item) {
 	this.type = "SyntaxQuote";
 	this.item = item;
 	return this;
-};
-
-SyntaxQuote.prototype.toString = function () {
-	return this.item.toQuote();
-};
-
-SyntaxQuote.prototype.toQuote = function () {
-	return format("new SyntaxQuote(%s)", this.item.toQuote());
 };
 
 exports.SyntaxQuote = SyntaxQuote;
@@ -212,9 +167,12 @@ var Unquote = function (item) {
 	return this;
 };
 
+exports.Unquote = Unquote;
 
-Unquote.prototype.toQuote = function () {
-	return this.item.toString();
+var UnquoteSplicing = function (item) {
+	this.type = "UnquoteSplicing";
+	this.item = item;
+	return this;
 };
 
-exports.Unquote = Unquote;
+exports.UnquoteSplicing = UnquoteSplicing;
