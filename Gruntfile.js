@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 				reporter: "dot"
 			},
 			tests: {
-				src: 'test/**/*.js',
+				src: ['test/**/*.js'],
 			}
 		},
 		crisp: {
