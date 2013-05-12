@@ -145,7 +145,6 @@ primitives[new Symbol("typeof")] = function (args) {
 	assert.equal(1, args.count(), "typeof takes exactly one argument. Got: " + args.count());
 	return "typeof " + args.first();
 };
-
 primitives[new Symbol("not")] = function (args) {
 	assert.equal(1, args.count(), "not takes exactly one argument. Got: " + args.count());
 	return "!" + args.first();
