@@ -1,28 +1,31 @@
 /*global exports: true */
 "use strict";
 
-var format = require('util').format;
-var assert = require('assert');
-var CrispString = require('./types').CrispString;
-var CrispNumber = require('./types').CrispNumber;
-var CrispBoolean = require('./types').CrispBoolean;
-var Symbol = require('./types').Symbol;
-var Keyword = require('./types').Keyword;
-var Vector = require('./types').Vector;
-var List = require('./types').List;
-var Environment = require('./runtime').Environment;
-var Quote = require('./runtime').Quote;
-var SyntaxQuote = require('./runtime').SyntaxQuote;
-var Unquote = require('./runtime').Unquote;
+var format			= require('util').format;
+var assert			= require('assert');
+var fs				= require('fs');
+
+var CrispString		= require('./types').CrispString;
+var CrispNumber		= require('./types').CrispNumber;
+var CrispBoolean	= require('./types').CrispBoolean;
+var Symbol			= require('./types').Symbol;
+var Keyword			= require('./types').Keyword;
+var Vector			= require('./types').Vector;
+var List			= require('./types').List;
+
+var Environment		= require('./runtime').Environment;
+var Quote			= require('./runtime').Quote;
+var SyntaxQuote		= require('./runtime').SyntaxQuote;
+var Unquote			= require('./runtime').Unquote;
 var UnquoteSplicing = require('./runtime').UnquoteSplicing;
-var CrispIf = require('./runtime').CrispIf;
-var CrispDef = require('./runtime').CrispDef;
-var Lambda = require('./runtime').Lambda;
-var Procedure = require('./runtime').Procedure;
-var Macro = require('./runtime').Macro;
-var equal = require('./runtime').equal;
-var read_string = require('./reader').read_string;
-var fs = require('fs');
+var CrispIf			= require('./runtime').CrispIf;
+var CrispDef		= require('./runtime').CrispDef;
+var Lambda			= require('./runtime').Lambda;
+var Procedure		= require('./runtime').Procedure;
+var Macro			= require('./runtime').Macro;
+var equal			= require('./runtime').equal;
+
+var read_string		= require('./reader').read_string;
 
 // Analyze functions take a form and turn it into a (more easily)
 // compilable object. In general it does this by analysing all the
