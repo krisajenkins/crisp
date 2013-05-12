@@ -189,4 +189,10 @@ describe('compiler', function () {
 		compilesTo("(unless true 1)", undefined, env);
 		compilesTo("(unless false 5)", 5, env);
 	});
+
+	it('aset', function () {
+		runIn("(def a 5)", false, env);
+		runIn("(aset a 10)", false, env);
+		compilesTo("a", 10, env);
+	});
 });

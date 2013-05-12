@@ -150,6 +150,10 @@ primitives[new Symbol("not")] = function (args) {
 	assert.equal(1, args.count(), "not takes exactly one arguments. Got: " + args.count);
 	return "!" + args.first();
 };
+primitives[new Symbol("aset")] = function (args) {
+	assert.equal(2, args.count(), "aset takes exactly one arguments. Got: " + args.count);
+	return format("%s = %s", args.first(), args.second());
+};
 
 var macros = {};
 
