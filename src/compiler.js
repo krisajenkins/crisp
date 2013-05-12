@@ -358,6 +358,7 @@ var preamble = function () {
 		"var Symbol = require('../lib/types').Symbol;",
 		"var Vector = require('../lib/types').Vector;",
 		"var equal = require('deep-equal');",
+		"var format = require('util').format;",
 		"",
 		"",
 	].join("\n");
