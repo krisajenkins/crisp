@@ -69,12 +69,12 @@ var syntax_expand = function (form, env) {
 	// console.log(format("Expanding: %s", form));
 	if (form instanceof List) {
 		if (equal(form.first(), new Symbol("unquote"))) {
-			assert.equal(2, form.count(), "Unquote takes exactly one argument.");
+			assert.equal(2, form.count(), "unquote takes exactly one argument.");
 			return new Unquote(analyse(form.second(), env));
 		}
 
 		if (equal(form.first(), new Symbol("unquote-splicing"))) {
-			assert.equal(2, form.count(), "UnquoteSplicing takes exactly one argument.");
+			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
 			return new UnquoteSplicing(analyse(form.second(), env));
 		}
 
@@ -85,7 +85,7 @@ var syntax_expand = function (form, env) {
 };
 
 analyse.syntax_quote = function (form, env) {
-	assert.equal(2, form.count(), "Syntax-quote takes exactly one argument.");
+	assert.equal(2, form.count(), "syntax-quote takes exactly one argument.");
 	return new SyntaxQuote(syntax_expand(form.second(), env));
 };
 
@@ -98,7 +98,7 @@ analyse.if = function (form, env) {
 };
 
 analyse.def = function (form, env) {
-	assert.equal(3, form.count(), "Def takes exactly two arguments.");
+	assert.equal(3, form.count(), "def takes exactly two arguments.");
 	var name = analyse(form.second(), env),
 		value = analyse(form.third(), env);
 
@@ -130,31 +130,34 @@ analyse.macro = function (form, env) {
 
 // Primitives must be functions that will take compiled args, and return a compiled whole.
 var primitives = {};
-primitives[new Symbol("+")] = function (args) {return args.join(" + ");};
-primitives[new Symbol("-")] = function (args) {return args.join(" - ");};
-primitives[new Symbol("*")] = function (args) {return args.join(" * ");};
-primitives[new Symbol("/")] = function (args) {return args.join(" / ");};
+primitives[new Symbol("+")] = function (args) {return format("(%s)", args.join(" + "));};
+primitives[new Symbol("-")] = function (args) {return format("(%s)", args.join(" - "));};
+primitives[new Symbol("*")] = function (args) {return format("(%s)", args.join(" * "));};
+primitives[new Symbol("/")] = function (args) {return format("(%s)", args.join(" / "));};
 primitives[new Symbol("=")] = function (args) {return format("equal(%s)", args.join(", "));};
 primitives[new Symbol("or")] = function (args) {return args.join(" || ");};
 primitives[new Symbol("and")] = function (args) {return args.join(" and ");};
 primitives[new Symbol("instanceof")] = function (args) {
-	assert.equal(2, args.count(), "instanceof takes exactly two arguments. Got: " + args.count);
+	assert.equal(2, args.count(), "instanceof takes exactly two arguments. Got: " + args.count());
 	return args.join(" instanceof ");
 };
 primitives[new Symbol("typeof")] = function (args) {
-	assert.equal(1, args.count(), "typeof takes exactly one arguments. Got: " + args.count);
+	assert.equal(1, args.count(), "typeof takes exactly one argument. Got: " + args.count());
 	return "typeof " + args.first();
 };
-
 primitives[new Symbol("not")] = function (args) {
-	assert.equal(1, args.count(), "not takes exactly one arguments. Got: " + args.count);
+	assert.equal(1, args.count(), "not takes exactly one argument. Got: " + args.count());
 	return "!" + args.first();
+};
+primitives[new Symbol("aset")] = function (args) {
+	assert.equal(2, args.count(), "aset takes exactly two arguments. Got: " + args.count());
+	return format("%s = %s", args.first(), args.second());
 };
 
 var macros = {};
 
 var compile = function compile(form, env) {
-	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded, match;
+	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded, match, new_head;
 
 	if (form instanceof CrispNumber)  { return form.toString(); }
 	if (form instanceof CrispBoolean) { return form.toString(); }
@@ -239,7 +242,31 @@ var compile = function compile(form, env) {
 
 		stored = primitives[head];
 		if (typeof stored !== 'undefined') {
-			return format("(%s)", stored(compiled_args));
+			return format("%s", stored(compiled_args));
+		}
+
+		// Interop.
+		if (head instanceof Symbol) {
+			match = /(.*)\.$/.exec(head.name);
+			if (match) {
+				return format("new %s(%s)", compile(new Symbol(match[1]), env), compiled_args.join(", "));
+			}
+
+			match = /^.-(.*)/.exec(head.name);
+			if (match) {
+				assert.equal(1, args.count(), "property access takes exactly one argument.");
+				return format("%s.%s", compiled_args.first(), compile(new Symbol(match[1]), env));
+			}
+
+			match = /^\.(.*)/.exec(head.name);
+			if (match) {
+				return format(
+					"%s.%s(%s)",
+					compiled_args.first(),
+					compile(new Symbol(match[1], env)),
+					compiled_args.rest().join(", ")
+				);
+			}
 		}
 
 		return format("%s(%s)", compile(head, env), compiled_args.join(", "));
@@ -331,6 +358,7 @@ var preamble = function () {
 		"var Symbol = require('../lib/types').Symbol;",
 		"var Vector = require('../lib/types').Vector;",
 		"var equal = require('deep-equal');",
+		"var format = require('util').format;",
 		"",
 		"",
 	].join("\n");
