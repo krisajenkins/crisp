@@ -352,7 +352,11 @@ var compile_string = function (input, env) {
 		read = read_string(input);
 		input = read.remainder;
 
-		if (read.type !== "WHITESPACE") {
+		if (
+			read.type !== "WHITESPACE"
+			&&
+			read.type !== "COMMENT"
+		) {
 			analysis = analyse(read.result, env);
 			compiled = compile(analysis, env);
 			result.push(compiled + ";\n");

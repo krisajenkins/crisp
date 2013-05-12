@@ -94,4 +94,34 @@ describe('reader', function () {
 			])
 		);
 	});
+
+	it('Comments', function () {
+		var one		= read_string("(def a 5) ; A definition\n(def b 6)"),
+			two		= read_string(one.remainder),
+			three	= read_string(two.remainder),
+			four	= read_string(three.remainder),
+			five	= read_string(four.remainder);
+
+		assert.equal("COMMENT", read_string("; Some comment").type);
+
+		assert.deepEqual(
+			one.result,
+			new List([
+				new Symbol("def"),
+				new Symbol("a"),
+				new CrispNumber(5),
+			])
+		);
+		assert.equal(two.type, "WHITESPACE");
+		assert.equal(three.type, "COMMENT");
+		assert.equal(four.type, "WHITESPACE");
+		assert.deepEqual(
+			five.result,
+			new List([
+				new Symbol("def"),
+				new Symbol("b"),
+				new CrispNumber(6),
+			])
+		);
+	});
 });

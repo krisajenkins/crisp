@@ -1,5 +1,6 @@
 "use strict";
 
+var format = require('util').format;
 var Symbol = require('./types').Symbol;
 var Keyword = require('./types').Keyword;
 var Vector = require('./types').Vector;
@@ -36,6 +37,7 @@ var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
 var match_boolean			= make_parser(/^(true|false)\b/, 'BOOLEAN');
 var match_symbol			= make_parser(/^[\w\._\/\-\+!=?&\*]+/, 'SYMBOL');
 var match_whitespace		= make_parser(/^\s+/, 'WHITESPACE');
+var match_comment			= make_parser(/^;(.*)/, 'COMMENT');
 var match_quote				= make_parser(/^'/, 'QUOTE');
 var match_syntax_quote		= make_parser(/^`/, 'SYNTAX_QUOTE');
 var match_unquote_splicing	= make_parser(/^~@/, 'UNQUOTE_SPLICING');
@@ -57,7 +59,11 @@ function read_until(closing_matcher, string) {
 
 		match = read_string(remaining_string);
 		if (match) {
-			if (match.type !== 'WHITESPACE') {
+			if (
+				match.type !== 'WHITESPACE'
+				&&
+				match.type !== 'COMMENT'
+			) {
 				forms.push(match.result);
 			}
 			remaining_string = match.remainder;
@@ -160,6 +166,12 @@ function read_string(string) {
 		return match;
 	}
 
+	// Comment.
+	match = match_comment(string);
+	if (match) {
+		return match;
+	}
+
 	// Symbols.
 	match = match_symbol(string);
 	if (match) {
@@ -173,7 +185,7 @@ function read_string(string) {
 		return match;
 	}
 
-	throw "Can't parse: " + string;
+	throw new Error(format('Can\'t parse: "%s"', string));
 }
 exports.read_string = read_string;
 
