@@ -130,10 +130,10 @@ analyse.macro = function (form, env) {
 
 // Primitives must be functions that will take compiled args, and return a compiled whole.
 var primitives = {};
-primitives[new Symbol("+")] = function (args) {return args.join(" + ");};
-primitives[new Symbol("-")] = function (args) {return args.join(" - ");};
-primitives[new Symbol("*")] = function (args) {return args.join(" * ");};
-primitives[new Symbol("/")] = function (args) {return args.join(" / ");};
+primitives[new Symbol("+")] = function (args) {return format("(%s)", args.join(" + "));};
+primitives[new Symbol("-")] = function (args) {return format("(%s)", args.join(" - "));};
+primitives[new Symbol("*")] = function (args) {return format("(%s)", args.join(" * "));};
+primitives[new Symbol("/")] = function (args) {return format("(%s)", args.join(" / "));};
 primitives[new Symbol("=")] = function (args) {return format("equal(%s)", args.join(", "));};
 primitives[new Symbol("or")] = function (args) {return args.join(" || ");};
 primitives[new Symbol("and")] = function (args) {return args.join(" and ");};
@@ -243,7 +243,7 @@ var compile = function compile(form, env) {
 
 		stored = primitives[head];
 		if (typeof stored !== 'undefined') {
-			return format("(%s)", stored(compiled_args));
+			return format("%s", stored(compiled_args));
 		}
 
 		return format("%s(%s)", compile(head, env), compiled_args.join(", "));
