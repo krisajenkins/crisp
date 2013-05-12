@@ -158,7 +158,7 @@ primitives[new Symbol("aset")] = function (args) {
 var macros = {};
 
 var compile = function compile(form, env) {
-	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded, match;
+	var head, args, stored, compiled_args, compiled_name, compiled_value, expanded, match, new_head;
 
 	if (form instanceof CrispNumber)  { return form.toString(); }
 	if (form instanceof CrispBoolean) { return form.toString(); }
@@ -244,6 +244,30 @@ var compile = function compile(form, env) {
 		stored = primitives[head];
 		if (typeof stored !== 'undefined') {
 			return format("%s", stored(compiled_args));
+		}
+
+		// Interop.
+		if (head instanceof Symbol) {
+			match = /(.*)\.$/.exec(head.name);
+			if (match) {
+				return format("new %s(%s)", compile(new Symbol(match[1]), env), compiled_args.join(", "));
+			}
+
+			match = /^.-(.*)/.exec(head.name);
+			if (match) {
+				assert.equal(1, args.count(), "property access takes exactly one argument.");
+				return format("%s.%s", compiled_args.first(), compile(new Symbol(match[1]), env));
+			}
+
+			match = /^\.(.*)/.exec(head.name);
+			if (match) {
+				return format(
+					"%s.%s(%s)",
+					compiled_args.first(),
+					compile(new Symbol(match[1], env)),
+					compiled_args.rest().join(", ")
+				);
+			}
 		}
 
 		return format("%s(%s)", compile(head, env), compiled_args.join(", "));

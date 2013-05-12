@@ -195,4 +195,11 @@ describe('compiler', function () {
 		runIn("(aset a 10)", false, env);
 		compilesTo("a", 10, env);
 	});
+
+	it('Interop', function () {
+		runIn('(def Person (fn [name] (aset this.name name) (aset this.greet (fn [] (+ "Hello " this.name))) this))', false, env);
+		runIn('(def a-person (Person. "Kris"))', false, env);
+		compilesTo("(.-name a-person)", "Kris", env);
+		compilesTo("(.greet a-person)", "Hello Kris", env);
+	});
 });
