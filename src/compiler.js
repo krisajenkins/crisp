@@ -27,32 +27,36 @@ var equal			= require('./runtime').equal;
 
 var read_string		= require('./reader').read_string;
 
+var head_is = function (form, symbol_name) {
+	return (equal(form.first(), new Symbol(symbol_name)));
+};
+
 // Analyze functions take a form and turn it into a (more easily)
 // compilable object. In general it does this by analysing all the
 // components of a list. However, it allows for some specal forms.
 var analyse = function analyse(form, env) {
 	if (form instanceof List) {
-		if (equal(form.first(), new Symbol("quote"))) {
+		if (head_is(form, "quote")) {
 			return analyse.quote(form, env);
 		}
 
-		if (equal(form.first(), new Symbol("syntax-quote"))) {
+		if (head_is(form, "syntax-quote")) {
 			return analyse.syntax_quote(form, env);
 		}
 
-		if (equal(form.first(), new Symbol("if"))) {
+		if (head_is(form, "if")) {
 			return analyse.if(form, env);
 		}
 
-		if (equal(form.first(), new Symbol("fn"))) {
+		if (head_is(form, "fn")) {
 			return analyse.fn(form, env);
 		}
 
-		if (equal(form.first(), new Symbol("def"))) {
+		if (head_is(form, "def")) {
 			return analyse.def(form, env);
 		}
 
-		if (equal(form.first(), new Symbol("macro"))) {
+		if (head_is(form, "macro")) {
 			return analyse.macro(form, env);
 		}
 
@@ -71,12 +75,12 @@ analyse.quote = function (form, env) {
 var syntax_expand = function (form, env) {
 	// console.log(format("Expanding: %s", form));
 	if (form instanceof List) {
-		if (equal(form.first(), new Symbol("unquote"))) {
+		if (head_is(form, "unquote")) {
 			assert.equal(2, form.count(), "unquote takes exactly one argument.");
 			return new Unquote(analyse(form.second(), env));
 		}
 
-		if (equal(form.first(), new Symbol("unquote-splicing"))) {
+		if (head_is(form, "unquote-splicing")) {
 			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
 			return new UnquoteSplicing(analyse(form.second(), env));
 		}
