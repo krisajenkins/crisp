@@ -334,7 +334,10 @@ compile.syntax_quote = function (form, env) {
 	}
 
 	if (form instanceof Vector) {
-		return format("new Vector([%s])", form.map(function (f) { return compile.syntax_quote(f, env); }).join(", "));
+		return format(
+			"new Vector([%s])",
+			form.map(function (f) { return compile.syntax_quote(f, env); }).join(", ")
+		);
 	}
 
 	if (form instanceof Unquote) {
