@@ -29,8 +29,8 @@ var identity = function (x) {
 exports.identity = identity;
 
 var equal = function (x, y) {
-	return (typeof x === "undefined") ? (typeof y === "undefined")
-		: (typeof y === "undefined") ? false
+	return (x === undefined) ? (y === undefined)
+		: (y === undefined) ? false
 		: x.equal ? x.equal(y)
 		: y.equal ? y.equal(x)
 		: (typeof x === typeof y) ? (x === y)
@@ -119,7 +119,7 @@ Environment.prototype.extend_by = function (callee, args, rest, values) {
 	var i,
 	sub_env = this.extend();
 
-	if (typeof rest === "undefined") {
+	if (rest === undefined) {
 		assert.equal(args.length, values.length, "Callee " + callee + " called with the wrong number of arguments, Expected " + args.length + ". Got " + values.length + ".");
 	} else {
 		assert.equal(true, args.length <= values.length, "Callee " + callee + " called with the wrong number of arguments, Expected " + args.length + "+. Got " + values.length + ".");
@@ -128,7 +128,7 @@ Environment.prototype.extend_by = function (callee, args, rest, values) {
 	for (i = 0; i < args.length; i = i + 1) {
 		sub_env[args[i]] = values[i];
 	}
-	if (typeof rest !== "undefined") {
+	if (rest !== undefined) {
 		if (values.length > args.length) {
 			sub_env[rest] = values.slice(args.length);
 		}

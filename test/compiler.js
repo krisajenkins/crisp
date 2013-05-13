@@ -26,7 +26,7 @@ var runIn = function (source, debug, env) {
 
 	compiled = compile_string(source, env);
 
-	if (typeof debug !== "undefined" && debug !== false) {
+	if (debug !== undefined && debug !== false) {
 		console.log("\n==== COMPILED ====");
 		console.log(compiled);
 		console.log(env);

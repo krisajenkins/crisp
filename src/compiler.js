@@ -238,13 +238,13 @@ var compile = function compile(form, env) {
 
 		// TODO True is expanding into the string, rather than the symbol. Hmm...
 		stored = macros[head];
-		if (typeof stored !== 'undefined') {
+		if (stored !== undefined) {
 			expanded = stored.apply(env, args.items); // TODO, in the apply call, what should this be?
 			return compile(analyse(expanded, env), env);
 		}
 
 		stored = primitives[head];
-		if (typeof stored !== 'undefined') {
+		if (stored !== undefined) {
 			return format("%s", stored(compiled_args));
 		}
 
