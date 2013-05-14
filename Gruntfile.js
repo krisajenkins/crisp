@@ -2,6 +2,7 @@
 
 module.exports = function (grunt) {
 	// Project configuration.
+	grunt.option('stack', true);
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		uglify: {
