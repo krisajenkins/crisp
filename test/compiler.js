@@ -156,31 +156,33 @@ describe('compiler', function () {
 		);
 	});
 
-	// it('Unquote-slicing', function () {
-	// 	runIn("(def b '(1 2 3))", false, env);
+	it('Unquote-slicing', function () {
+		runIn("(def b '(1 2 3))", false, env);
 
-	// 	kompilesTo(
-	// 		"`(a ~@b)",
-	// 		new List([
-	// 			new Symbol("a"),
-	// 			1,
-	// 			2,
-	// 			3
-	// 		]),
-	// 		env
-	// 	);
+		compilesTo(
+			"`(a ~@b c)",
+			new List([
+				new Symbol("a"),
+				new CrispNumber(1),
+				new CrispNumber(2),
+				new CrispNumber(3),
+				new Symbol("c"),
+			]),
+			env
+		);
 
-	// 	compilesTo(
-	// 		"`[a ~@b]",
-	// 		new Vector([
-	// 			new Symbol("a"),
-	// 			1,
-	// 			2,
-	// 			3
-	// 		]),
-	// 		env
-	// 	);
-	// });
+		compilesTo(
+			"`[a ~@b c]",
+			new Vector([
+				new Symbol("a"),
+				new CrispNumber(1),
+				new CrispNumber(2),
+				new CrispNumber(3),
+				new Symbol("c"),
+			]),
+			env
+		);
+	});
 
 	it('Simple Macros', function () {
 		runIn("(def unless (macro [test body] `(if ~test nil ~body)))", false, env);

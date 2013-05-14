@@ -68,4 +68,30 @@ describe('Equality', function () {
 			)
 		);
 	});
+
+	it('List methods', function () {
+		var a = new List([1, 2, 3]),
+			b = new List([4, 5, 6]);
+		assert.deepEqual(
+			a.cons(b),
+			new List([new List([4, 5, 6]), 1, 2, 3])
+		);
+		assert.deepEqual(
+			a.concat(b),
+			new List([1, 2, 3, 4, 5, 6])
+		);
+	});
+
+	it('Vector methods', function () {
+		var a = new Vector([1, 2, 3]),
+			b = new Vector([4, 5, 6]);
+		assert.deepEqual(
+			a.cons(b),
+			new Vector([new Vector([4, 5, 6]), 1, 2, 3])
+		);
+		assert.deepEqual(
+			a.concat(b),
+			new Vector([1, 2, 3, 4, 5, 6])
+		);
+	});
 });

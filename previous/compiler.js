@@ -12,15 +12,11 @@ var Symbol			= require('./types').Symbol;
 var Keyword			= require('./types').Keyword;
 var Vector			= require('./types').Vector;
 var List			= require('./types').List;
+var is_seq			= require('./types').is_seq;
+var head_is			= require('./types').head_is;
 
 var equal			= require('./runtime').equal;
 var read_string		= require('./reader').read_string;
-
-var head_is = function (form, symbol_name) {
-	return form instanceof List
-		&&
-		(equal(form.first(), new Symbol(symbol_name)));
-};
 
 var meta = function (object) {
 	if (object instanceof Object) {
@@ -287,6 +283,11 @@ compile.quote = function (form, env) {
 };
 
 compile.syntax_quote = function (form, env) {
+	var base;
+
+	if (form instanceof List)   { base = "new List([])";}
+	if (form instanceof Vector) { base = "new Vector([])";}
+
 	if (form instanceof List) {
 		if (head_is(form, "unquote")) {
 			assert.equal(2, form.count(), "unquote takes exactly one argument.");
@@ -297,29 +298,26 @@ compile.syntax_quote = function (form, env) {
 			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
 			return compile(form.second(), env);
 		}
-
-		// TODO We can't map. We Must peek.
-		var i, items = [], sub_item, compiled_sub_item;
-		for (i = 0; i < form.count(); i = i + 1) {
-			sub_item = form.nth(i);
-
-			// if (sub_item instanceof UnquoteSplicing) {
-			// 	compiled_sub_item = compile.sequence(sub_item.item, env);
-			// 	items = items.concat(compiled_sub_item);
-			// } else {
-			// }
-			compiled_sub_item = compile.syntax_quote(sub_item, env);
-			items.push(compiled_sub_item);
-		}
-
-		return format("new List([%s])", items.join(", "));
 	}
 
-	if (form instanceof Vector) {
-		return format(
-			"new Vector([%s])",
-			form.map(function (f) { return compile.syntax_quote(f, env); }).join(", ")
-		);
+	if (is_seq(form)) {
+		if (form.count() === 0) {
+			return base;
+		} else {
+			if (head_is(form.first(), "unquote-splicing")) {
+				return format(
+					"%s.prepend(%s)",
+					compile.syntax_quote(form.rest(), env),
+					compile.syntax_quote(form.first(), env)
+				);
+			}
+
+			return format(
+				"%s.cons(%s)",
+				compile.syntax_quote(form.rest(), env),
+				compile.syntax_quote(form.first(), env)
+			);
+		}
 	}
 
 	return compile.quote_atom(form, env);

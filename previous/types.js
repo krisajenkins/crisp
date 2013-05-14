@@ -105,6 +105,15 @@ List.prototype.type = "crisp.types/list";
 List.prototype.cons = function (item) {
 	return new List([item].concat(this.items));
 };
+List.prototype.concat = function (other) {
+	return new List(this.items.concat(other.items));
+};
+List.prototype.append = function (other) {
+	return new List(this.items.concat(other.items));
+};
+List.prototype.prepend = function (other) {
+	return new List(other.items.concat(this.items));
+};
 List.prototype.join = function (separator) {
 	return this.items.join(separator);
 };
@@ -140,7 +149,6 @@ List.prototype.nth = function (n) {
 List.prototype.rest = function () {
 	return new List(this.items.slice(1));
 };
-
 List.prototype.next = function () {
 	// TODO This is wrong.
 	return new List(this.items.slice(1));
@@ -190,6 +198,21 @@ Vector.prototype.take = function (n) {
 Vector.prototype.drop = function (n) {
 	return new Vector(this.items.slice(n + 1));
 };
+Vector.prototype.rest = function () {
+	return new Vector(this.items.slice(1));
+};
+Vector.prototype.cons = function (item) {
+	return new Vector([item].concat(this.items));
+};
+Vector.prototype.concat = function (other) {
+	return new Vector(this.items.concat(other.items));
+};
+Vector.prototype.prepend = function (other) {
+	return new Vector(other.items.concat(this.items));
+};
+Vector.prototype.append = function (other) {
+	return new Vector(this.items.concat(other.items));
+};
 Vector.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
@@ -199,5 +222,19 @@ Vector.prototype.toString = function () {
 };
 
 exports.Vector = Vector;
+
+var is_seq = function (form) {
+	return form instanceof List
+		||
+		form instanceof Vector;
+};
+exports.is_seq = is_seq;
+
+var head_is = function (form, symbol_name) {
+	return form instanceof List
+		&&
+		(equal(form.first(), new Symbol(symbol_name)));
+};
+exports.head_is = head_is;
 
 // END
