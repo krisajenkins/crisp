@@ -2,6 +2,7 @@
 // START
 "use strict";
 
+var assert = require("assert");
 var equal = require("deep-equal");
 var format = require("util").format;
 
@@ -18,7 +19,7 @@ CrispBoolean.prototype.equal = function (other) {
 };
 
 CrispBoolean.prototype.toString = function () {
-	return this.value;
+	return this.value.toString();
 };
 
 exports.CrispBoolean = CrispBoolean;
@@ -72,7 +73,7 @@ Symbol.prototype.equal = function (other) {
 };
 
 Symbol.prototype.toString = function () {
-	return this.name;
+	return this.name.toString();
 };
 
 exports.Symbol = Symbol;
@@ -112,6 +113,12 @@ List.prototype.append = function (other) {
 	return new List(this.items.concat(other.items));
 };
 List.prototype.prepend = function (other) {
+	if (other === undefined) {
+		return this;
+	}
+	if (other.items === undefined) {
+		return this;
+	}
 	return new List(other.items.concat(this.items));
 };
 List.prototype.join = function (separator) {
@@ -149,6 +156,12 @@ List.prototype.nth = function (n) {
 List.prototype.rest = function () {
 	return new List(this.items.slice(1));
 };
+List.prototype.take = function (n) {
+	return new List(this.items.slice(0, n));
+};
+List.prototype.drop = function (n) {
+	return new List(this.items.slice(n));
+};
 List.prototype.next = function () {
 	// TODO This is wrong.
 	return new List(this.items.slice(1));
@@ -159,7 +172,7 @@ List.prototype.equal = function (other) {
 };
 
 List.prototype.toString = function () {
-	return format("[%s]", this.items.map(function (x) { return x.toString(); }).join(", "));
+	return format("(%s)", this.items.map(function (x) { return x.toString(); }).join(", "));
 };
 
 exports.List = List;
@@ -228,7 +241,7 @@ Vector.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
 Vector.prototype.toString = function () {
-	return format("%s", this.items.join(", "));
+	return format("[%s]", this.items.join(", "));
 };
 
 exports.Vector = Vector;

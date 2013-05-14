@@ -82,6 +82,11 @@ describe('compiler', function () {
 		compilesTo('\'"Something"', new CrispString("Something"), env);
 	});
 
+	it('nil', function () {
+		compilesTo("nil", undefined, env);
+		compilesTo("'nil", new Symbol("nil"), env);
+	});
+
 	it('Boolean', function () {
 		compilesTo("true", true, env);
 		compilesTo("'true", new CrispBoolean(true), env);
@@ -103,19 +108,20 @@ describe('compiler', function () {
 	it('Lambda', function () {
 		compilesTo("((fn [x] x) 5)", 5, env);
 		compilesTo("((fn [x y] (+ x y)) 5 9)", 14, env);
-		compilesTo("((fn [x] (* x 4) 1) 5)", 1, env);
 		compilesTo("((fn [x y] (* x y)) 5 (+ 2 4))", 30, env);
+
+		compilesTo("((fn [x] (* x 4) 1) 5)", 1, env);
 	});
 
 	it('Varargs functions', function () {
-		compilesTo("((fn [& xs] xs) 1 2 3 4 5)", [1, 2, 3, 4, 5], env);
+		compilesTo("((fn [& xs] xs) 1 2 3 4 5)", new List([1, 2, 3, 4, 5]), env);
 
 		compilesTo("((fn [x & xs] x) 1 2 3 4 5)", 1, env);
-		compilesTo("((fn [x & xs] xs) 1 2 3 4 5)", [2, 3, 4, 5], env);
+		compilesTo("((fn [x & xs] xs) 1 2 3 4 5)", new List([2, 3, 4, 5]), env);
 
 		compilesTo("((fn [x y & xs] x) 1 2 3 4 5)", 1, env);
 		compilesTo("((fn [x y & xs] y) 1 2 3 4 5)", 2, env);
-		compilesTo("((fn [x y & xs] xs) 1 2 3 4 5)", [3, 4, 5], env);
+		compilesTo("((fn [x y & xs] xs) 1 2 3 4 5)", new List([3, 4, 5]), env);
 	});
 
 	it('Def', function () {
@@ -193,6 +199,16 @@ describe('compiler', function () {
 			]),
 			env
 		);
+
+		compilesTo(
+			"`~@b",
+			new List([
+				new CrispNumber(1),
+				new CrispNumber(2),
+				new CrispNumber(3),
+			]),
+			env
+		);
 	});
 
 	it('Simple Macros', function () {
@@ -210,6 +226,9 @@ describe('compiler', function () {
 			]),
 			env
 		);
+
+		runIn("(def doit (macro [& body] `((fn [] ~@body))))", false, env);
+		compilesTo("(doit 1 (+ 2 4) 6)", 6, env);
 	});
 
 	it('Nested Macros', function () {

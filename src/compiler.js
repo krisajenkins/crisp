@@ -82,6 +82,8 @@ primitives[new Symbol("aset")] = function (args, env) {
 };
 
 var compile = function compile(form, env) {
+	if (form === undefined)  { return "undefined"; }
+
 	if (form instanceof CrispNumber)  { return form.toString(); }
 	if (form instanceof CrispBoolean) { return form.toString(); }
 	if (form instanceof CrispString)  { return form.toString(); }
@@ -106,16 +108,16 @@ var compile = function compile(form, env) {
 		return compile.fn(form, env);
 	}
 
+	if (head_is(form, "macro")) {
+		return compile.macro(form, env);
+	}
+
 	if (head_is(form, "quote")) {
 		return compile.quote(form.second(), env);
 	}
 
 	if (head_is(form, "syntax-quote")) {
 		return compile.syntax_quote(form.second(), env);
-	}
-
-	if (head_is(form, "macro")) {
-		return compile.macro(form, env);
 	}
 
 	if (head_is(form, "macroexpand-1")) {
@@ -126,12 +128,13 @@ var compile = function compile(form, env) {
 };
 
 compile.macroexpand_1 = function (form, env) {
+	assert.equal(true, form instanceof List, "Argument to macroexpand-1 must be a List.");
 	var arg, expanded;
 
 	assert.equal(2, form.count(), "macroexpand-1 takes exactly one argument.");
 	arg = form.second();
 
-	assert.deepEqual(new Symbol("quote"), arg.first(), "Argument to macroexpand-1 must be quoted.");
+	assert.equal(true, head_is(arg, "quote"), "Argument to macroexpand-1 must be quoted.");
 	expanded = macroexpand_1(arg.second(), env);
 
 	return compile(new List([new Symbol("quote"), expanded]), env);
@@ -178,7 +181,7 @@ compile.application = function (form, env) {
 };
 
 compile.vector = function (form, env) {
-	return format("[%s]", form.items.join(", "));
+	return form.toString();
 };
 
 compile.sequence = function (forms, env) {
@@ -186,6 +189,10 @@ compile.sequence = function (forms, env) {
 };
 
 compile.symbol = function (form, env) {
+	if (equal(form, new Symbol("nil"))) {
+		return form;
+	}
+
 	var expanded = form.toString(),
 		match = /(.*)\?$/.exec(expanded);
 
@@ -193,15 +200,21 @@ compile.symbol = function (form, env) {
 		expanded = "is_" + match[1];
 	}
 
-	expanded = expanded.replace(/-/g, "_");
-	expanded = expanded.replace(/!/g, "BANG");
+	// JavaScript reserved symbols.
+	expanded = expanded.replace(/-/g,		"_");
+	expanded = expanded.replace(/\*\*/g,	"__");
+	expanded = expanded.replace(/\*/g,		"STAR");
+	expanded = expanded.replace(/!/g,		"BANG");
+
+	// JavaScript reserved words.
+	expanded = expanded.replace(/^do$/g,	"crisp_do");
 
 	return format("%s", expanded);
 };
 
 compile.fn = function (form, env) {
 	var args = form.second(),
-		body = form.rest().rest(),
+		body = form.drop(2),
 	    vararg_point,
         compiled_args,
         compiled_vararg,
@@ -210,15 +223,16 @@ compile.fn = function (form, env) {
 	vararg_point = args.indexOf(new Symbol("&"));
 	if (vararg_point >= 0) {
 		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
-		compiled_args = args.take(vararg_point);
+		compiled_args = args.take(vararg_point).join(", ");
 
 		compiled_vararg = format(
-			"\tvar %s = Array.prototype.slice.call(arguments, %d);\n",
-			args.drop(vararg_point + 1),
+			"\tvar %s = new List(Array.prototype.slice.call(arguments, %d));\n",
+			args.nth(vararg_point + 1),
 			vararg_point
 		);
 	} else {
-		compiled_args = form.second();
+		compiled_args = compile(form.second(), env);
+		compiled_args = form.second().join(", ");
 		compiled_vararg = "";
 	}
 	compiled_body = compile.sequence(body, env);
@@ -228,6 +242,13 @@ compile.fn = function (form, env) {
 		compiled_args,
 		compiled_vararg,
 		compiled_body
+	);
+};
+
+compile.macro = function (form, env) {
+	return with_meta(
+		{macro: true},
+		compile.fn(form, env)
 	);
 };
 
@@ -256,12 +277,10 @@ compile.def = function (form, env) {
 	metadata = meta(compiled_value);
 	if (
 		metadata !== undefined
-			&&
-			metadata.macro === true
+		&&
+		metadata.macro === true
 	) {
-		evaled_value = eval(compiled_value.toString());
-		macros[name] = evaled_value;
-		return format("// Defined Macro: %s", compiled_name);
+		macros[name] = eval(compiled_value.toString());
 	}
 
 	return format(
@@ -342,23 +361,6 @@ compile.syntax_quote = function (form, env) {
 	}
 
 	return compile.quote_atom(form, env);
-};
-
-compile.macro = function (form, env) {
-	var args = form.second(),
-		body = form.rest().rest(),
-		compiled;
-
-	compiled = format(
-		"(function (%s) {\n\treturn %s;\n})",
-		form.second(),
-		compile.sequence(body, env)
-	);
-
-	return with_meta(
-		{macro: true},
-		compiled
-	);
 };
 
 var preamble = function () {
