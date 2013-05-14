@@ -182,10 +182,24 @@ describe('compiler', function () {
 	// 	);
 	// });
 
-	it('Macros', function () {
+	it('Simple Macros', function () {
 		runIn("(def unless (macro [test body] `(if ~test nil ~body)))", false, env);
-		compilesTo("(unless true 1)", undefined, env);
-		compilesTo("(unless false 5)", 5, env);
+		// compilesTo("(unless true 1)", undefined, env);
+		// compilesTo("(unless false 5)", 5, env);
+
+		// kompilesTo(
+		// 	"(macroexpand-1 '(unless false 5))",
+		// 	new List([
+		// 		new Symbol("if"),
+		// 		new CrispBoolean("false"),
+		// 		new Symbol("nil"),
+		// 		new CrispNumber(5),
+		// 	]),
+		// 	env
+		// );
+	});
+
+	it('Nested Macros', function () {
 	});
 
 	it('aset', function () {
