@@ -237,6 +237,16 @@ Vector.prototype.indexOf = function (thing) {
 
 	return -1;
 };
+Vector.prototype.first = function () {
+	if (this.items.length > 0) {
+		return this.items[0];
+	}
+};
+Vector.prototype.second = function () {
+	if (this.items.length > 1) {
+		return this.items[1];
+	}
+};
 Vector.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
