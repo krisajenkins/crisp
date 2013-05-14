@@ -22,6 +22,21 @@ var head_is = function (form, symbol_name) {
 		(equal(form.first(), new Symbol(symbol_name)));
 };
 
+var meta = function (object) {
+	if (object instanceof Object) {
+		return object.__metadata__;
+	}
+};
+
+var with_meta = function (metadata, object) {
+	if (typeof object === "string") {
+		object = new String(object);
+	}
+
+	object.__metadata__ = metadata;
+	return object;
+};
+
 var macros = {};
 
 var macroexpand_1 = function (form, env, debug) {
@@ -108,14 +123,26 @@ var compile = function compile(form, env) {
 	}
 
 	if (head_is(form, "macroexpand-1")) {
-		compile.macroexpand_1(form, env);
+		return compile.macroexpand_1(form, env);
 	}
 
 	return compile.application(form, env);
 };
 
+compile.macroexpand_1 = function (form, env) {
+	var arg, expanded;
+
+	assert.equal(2, form.count(), "macroexpand-1 takes exactly one argument.");
+	arg = form.second();
+
+	assert.deepEqual(new Symbol("quote"), arg.first(), "Argument to macroexpand-1 must be quoted.");
+	expanded = macroexpand_1(arg.second(), env);
+
+	return compile(new List([new Symbol("quote"), expanded]), env);
+};
+
 compile.application = function (form, env) {
-	var head, args, compiled_args, stored, match;
+	var head, args, compiled_args, stored, match, expanded;
 
 	head = form.first();
 	args = form.rest();
@@ -200,20 +227,25 @@ compile.def = function (form, env) {
 	var name = form.second(),
 		value = form.third(),
 		compiled_name,
-		compiled_value;
+		compiled_value,
+		evaled_value,
+		metadata;
 
 	assert.equal(true, name instanceof Symbol, "First argument to def must be a symbol.");
 
 	compiled_name = compile(name, env);
 	compiled_value = compile(value, env);
 
-	// TODO Install macros.
-	// if (
-	// 	form.value instanceof Macro
-	// ) {
-	// 	macros[compiled_name] = eval(compiled_value);
-	// 	return format("// Defined Macro: %s", compiled_name);
-	// }
+	metadata = meta(compiled_value);
+	if (
+		metadata !== undefined
+			&&
+			metadata.macro === true
+	) {
+		evaled_value = eval(compiled_value.toString());
+		macros[name] = evaled_value;
+		return format("// Defined Macro: %s", compiled_name);
+	}
 
 	return format(
 		"var %s = %s",
@@ -293,24 +325,20 @@ compile.syntax_quote = function (form, env) {
 	return compile.quote_atom(form, env);
 };
 
-compile.macroexpand_1 = function (form, env) {
-	var head = form.first(),
-		args = form.rest(),
-		result;
-
-	assert.equal(1, args.count(), "macroexpand-1 takes exactly one argument. Got: " + args.count());
-	result = macroexpand_1(args.first().item, env, true);
-	return format("// %s", compile(result, env));
-};
-
 compile.macro = function (form, env) {
 	var args = form.second(),
-		body = form.rest().rest();
+		body = form.rest().rest(),
+		compiled;
 
-	return format(
+	compiled = format(
 		"(function (%s) {\n\treturn %s;\n})",
 		form.second(),
 		compile.sequence(body, env)
+	);
+
+	return with_meta(
+		{macro: true},
+		compiled
 	);
 };
 
