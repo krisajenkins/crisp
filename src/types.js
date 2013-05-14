@@ -196,7 +196,7 @@ Vector.prototype.take = function (n) {
 	return new Vector(this.items.slice(0, n));
 };
 Vector.prototype.drop = function (n) {
-	return new Vector(this.items.slice(n + 1));
+	return new Vector(this.items.slice(n));
 };
 Vector.prototype.rest = function () {
 	return new Vector(this.items.slice(1));
@@ -213,10 +213,20 @@ Vector.prototype.prepend = function (other) {
 Vector.prototype.append = function (other) {
 	return new Vector(this.items.concat(other.items));
 };
+Vector.prototype.indexOf = function (thing) {
+	var i;
+
+	for (i = 0; i < this.items.length; i = i + 1) {
+		if (equal(this.items[i], thing)) {
+			return i;
+		}
+	}
+
+	return -1;
+};
 Vector.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
-
 Vector.prototype.toString = function () {
 	return format("%s", this.items.join(", "));
 };

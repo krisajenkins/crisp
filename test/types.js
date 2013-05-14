@@ -5,6 +5,7 @@ var assert		= require('assert');
 
 var Symbol		= require('../lib/types').Symbol;
 var CrispString = require('../lib/types').CrispString;
+var CrispNumber = require('../lib/types').CrispNumber;
 var Keyword		= require('../lib/types').Keyword;
 var Vector		= require('../lib/types').Vector;
 var List		= require('../lib/types').List;
@@ -71,7 +72,7 @@ describe('Equality', function () {
 		);
 	});
 
-	it('List methods', function () {
+	it('List manipulation', function () {
 		var a = new List([1, 2, 3]),
 			b = new List([4, 5, 6]);
 		assert.deepEqual(
@@ -84,7 +85,7 @@ describe('Equality', function () {
 		);
 	});
 
-	it('Vector methods', function () {
+	it('Vector manipulation', function () {
 		var a = new Vector([1, 2, 3]),
 			b = new Vector([4, 5, 6]);
 		assert.deepEqual(
@@ -95,5 +96,23 @@ describe('Equality', function () {
 			a.concat(b),
 			new Vector([1, 2, 3, 4, 5, 6])
 		);
+
+		assert.deepEqual(a.drop(0), a);
+		assert.deepEqual(a.drop(1), new Vector([ 2, 3]));
+		assert.deepEqual(a.drop(10), new Vector([]));
+
+		assert.deepEqual(a.take(0), new Vector([]));
+		assert.deepEqual(a.take(1), new Vector([1]));
+		assert.deepEqual(a.take(10), a);
+	});
+
+	it('Vector searching', function () {
+		var a = new Vector([new CrispNumber(1), new Symbol("&"), new Keyword("test")]);
+
+		assert.equal(0, a.indexOf(new CrispNumber(1)));
+		assert.equal(1, a.indexOf(new Symbol("&")));
+		assert.equal(2, a.indexOf(new Keyword("test")));
+
+		assert.equal(-1, a.indexOf("NOT THERE"));
 	});
 });

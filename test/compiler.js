@@ -107,6 +107,17 @@ describe('compiler', function () {
 		compilesTo("((fn [x y] (* x y)) 5 (+ 2 4))", 30, env);
 	});
 
+	it('Varargs functions', function () {
+		compilesTo("((fn [& xs] xs) 1 2 3 4 5)", [1, 2, 3, 4, 5], env);
+
+		compilesTo("((fn [x & xs] x) 1 2 3 4 5)", 1, env);
+		compilesTo("((fn [x & xs] xs) 1 2 3 4 5)", [2, 3, 4, 5], env);
+
+		compilesTo("((fn [x y & xs] x) 1 2 3 4 5)", 1, env);
+		compilesTo("((fn [x y & xs] y) 1 2 3 4 5)", 2, env);
+		compilesTo("((fn [x y & xs] xs) 1 2 3 4 5)", [3, 4, 5], env);
+	});
+
 	it('Def', function () {
 		runIn("(def a 5)", false, env);
 		compilesTo("a", 5, env);

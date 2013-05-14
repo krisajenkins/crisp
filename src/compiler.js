@@ -201,12 +201,33 @@ compile.symbol = function (form, env) {
 
 compile.fn = function (form, env) {
 	var args = form.second(),
-		body = form.rest().rest();
+		body = form.rest().rest(),
+	    vararg_point,
+        compiled_args,
+        compiled_vararg,
+        compiled_body;
+
+	vararg_point = args.indexOf(new Symbol("&"));
+	if (vararg_point >= 0) {
+		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
+		compiled_args = args.take(vararg_point);
+
+		compiled_vararg = format(
+			"\tvar %s = Array.prototype.slice.call(arguments, %d);\n",
+			args.drop(vararg_point + 1),
+			vararg_point
+		);
+	} else {
+		compiled_args = form.second();
+		compiled_vararg = "";
+	}
+	compiled_body = compile.sequence(body, env);
 
 	return format(
-		"(function (%s) {\n\treturn %s;\n})",
-		form.second(),
-		compile.sequence(body, env)
+		"(function (%s) {\n%s\treturn %s;\n})",
+		compiled_args,
+		compiled_vararg,
+		compiled_body
 	);
 };
 
