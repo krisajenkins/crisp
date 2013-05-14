@@ -137,26 +137,26 @@ analyse.macro = function (form, env) {
 
 // Primitives must be functions that will take compiled args, and return a compiled whole.
 var primitives = {};
-primitives[new Symbol("+")] = function (args) {return format("(%s)", args.join(" + "));};
-primitives[new Symbol("-")] = function (args) {return format("(%s)", args.join(" - "));};
-primitives[new Symbol("*")] = function (args) {return format("(%s)", args.join(" * "));};
-primitives[new Symbol("/")] = function (args) {return format("(%s)", args.join(" / "));};
-primitives[new Symbol("=")] = function (args) {return format("equal(%s)", args.join(", "));};
-primitives[new Symbol("or")] = function (args) {return args.join(" || ");};
-primitives[new Symbol("and")] = function (args) {return args.join(" and ");};
-primitives[new Symbol("instanceof")] = function (args) {
+primitives[new Symbol("+")] = function (args, env) {return format("(%s)", args.join(" + "));};
+primitives[new Symbol("-")] = function (args, env) {return format("(%s)", args.join(" - "));};
+primitives[new Symbol("*")] = function (args, env) {return format("(%s)", args.join(" * "));};
+primitives[new Symbol("/")] = function (args, env) {return format("(%s)", args.join(" / "));};
+primitives[new Symbol("=")] = function (args, env) {return format("equal(%s)", args.join(", "));};
+primitives[new Symbol("or")] = function (args, env) {return args.join(" || ");};
+primitives[new Symbol("and")] = function (args, env) {return args.join(" and ");};
+primitives[new Symbol("instanceof")] = function (args, env) {
 	assert.equal(2, args.count(), "instanceof takes exactly two arguments. Got: " + args.count());
 	return args.join(" instanceof ");
 };
-primitives[new Symbol("typeof")] = function (args) {
+primitives[new Symbol("typeof")] = function (args, env) {
 	assert.equal(1, args.count(), "typeof takes exactly one argument. Got: " + args.count());
 	return "typeof " + args.first();
 };
-primitives[new Symbol("not")] = function (args) {
+primitives[new Symbol("not")] = function (args, env) {
 	assert.equal(1, args.count(), "not takes exactly one argument. Got: " + args.count());
 	return "!" + args.first();
 };
-primitives[new Symbol("aset")] = function (args) {
+primitives[new Symbol("aset")] = function (args, env) {
 	assert.equal(2, args.count(), "aset takes exactly two arguments. Got: " + args.count());
 	return format("%s = %s", args.first(), args.second());
 };
@@ -249,7 +249,7 @@ var compile = function compile(form, env) {
 
 		stored = primitives[head];
 		if (stored !== undefined) {
-			return format("%s", stored(compiled_args));
+			return format("%s", stored(compiled_args, env));
 		}
 
 		// Interop.
