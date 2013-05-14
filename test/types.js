@@ -1,13 +1,15 @@
 /*global describe: true, it: true */
 "use strict";
 
-var assert = require('assert');
-var Symbol = require('../lib/types').Symbol;
+var assert		= require('assert');
+
+var Symbol		= require('../lib/types').Symbol;
 var CrispString = require('../lib/types').CrispString;
-var Keyword = require('../lib/types').Keyword;
-var Vector = require('../lib/types').Vector;
-var List = require('../lib/types').List;
-var equal = require('../lib/runtime').equal;
+var Keyword		= require('../lib/types').Keyword;
+var Vector		= require('../lib/types').Vector;
+var List		= require('../lib/types').List;
+
+var equal		= require('../lib/runtime').equal;
 
 describe('Equality', function () {
 	it('Keyword Equality', function () {
