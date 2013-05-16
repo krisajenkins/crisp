@@ -84,18 +84,18 @@ primitives[new Symbol("aset")] = function (args, env) {
 var compile = function compile(form, env) {
 	form = macroexpand(form, env);
 
-	if (form === undefined)  { return "undefined"; }
+	if (form === undefined) { return "undefined"; }
 
-	if (form instanceof CrispNumber)  { return form.toString(); }
+	if (form instanceof CrispNumber) { return form.toString(); }
 	if (form instanceof CrispBoolean) { return form.toString(); }
-	if (form instanceof CrispString)  { return form.toString(); }
+	if (form instanceof CrispString) { return form.toString(); }
 
 	if (form instanceof Symbol) {
 		return compile.symbol(form, env);
 	}
 
 	if (form instanceof Vector) {
-		return compile.vector(form);
+		return compile.vector(form, env);
 	}
 
 	if (head_is(form, "if")) {
@@ -110,10 +110,6 @@ var compile = function compile(form, env) {
 		return compile.fn(form, env);
 	}
 
-	if (head_is(form, "macro")) {
-		return compile.macro(form, env);
-	}
-
 	if (head_is(form, "quote")) {
 		return compile.quote(form.second(), env);
 	}
@@ -122,11 +118,203 @@ var compile = function compile(form, env) {
 		return compile.syntax_quote(form.second(), env);
 	}
 
+	if (head_is(form, "macro")) {
+		return compile.macro(form, env);
+	}
+
 	if (head_is(form, "macroexpand-1")) {
 		return compile.macroexpand_1(form, env);
 	}
 
 	return compile.application(form, env);
+};
+
+compile.symbol = function (form, env) {
+	if (equal(form, new Symbol("nil"))) {
+		return form;
+	}
+
+	var expanded = form.toString(),
+		match = /(.*)\?$/.exec(expanded);
+
+	if (match) {
+		expanded = "is_" + match[1];
+	}
+
+	// JavaScript reserved symbols.
+	expanded = expanded.replace(/-/g,		"_");
+	expanded = expanded.replace(/\*\*/g,	"__");
+	expanded = expanded.replace(/\*/g,		"STAR");
+	expanded = expanded.replace(/!/g,		"BANG");
+
+	// JavaScript reserved words.
+	expanded = expanded.replace(/^do$/g,	"crisp_do");
+	expanded = expanded.replace(/^let$/g,	"crisp_let");
+
+	return format("%s", expanded);
+};
+
+compile.vector = function (form, env) {
+	return form.toString();
+};
+
+compile.if = function (form, env) {
+	return format(
+		"%s ? %s : %s",
+		compile(form.second(), env),
+		compile(form.third(), env),
+		compile(form.fourth(), env)
+	);
+};
+
+compile.def = function (form, env) {
+	var name = form.second(),
+		value = form.third(),
+		compiled_name,
+		compiled_value,
+		evaled_value,
+		metadata;
+
+	assert.equal(true, name instanceof Symbol, "First argument to def must be a symbol.");
+
+	compiled_name = compile(name, env);
+	compiled_value = compile(value, env);
+
+	metadata = meta(compiled_value);
+	if (metadata !== undefined) {
+		if (metadata.macro === true) {
+			macros[name] = eval(compiled_value.toString());
+		}
+	}
+
+	return format(
+		"var %s = %s",
+		compiled_name,
+		compiled_value
+	);
+};
+
+compile.sequence = function (forms, env) {
+	return forms.map(function (form) { return compile(form, env); }).join(",");
+};
+
+compile.fn = function (form, env) {
+	var args = form.second(),
+		body = form.drop(2),
+	    vararg_point,
+        compiled_args,
+        compiled_vararg,
+        compiled_body;
+
+	vararg_point = args.indexOf(new Symbol("&"));
+	if (vararg_point >= 0) {
+		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
+		compiled_args = args.take(vararg_point).join(", ");
+
+		compiled_vararg = format(
+			"\tvar %s = new List(Array.prototype.slice.call(arguments, %d));\n",
+			args.nth(vararg_point + 1),
+			vararg_point
+		);
+	} else {
+		compiled_args = compile(form.second(), env);
+		compiled_args = form.second().join(", ");
+		compiled_vararg = "";
+	}
+	compiled_body = compile.sequence(body, env);
+
+	return format(
+		"(function (%s) {\n%s\treturn %s;\n})",
+		compiled_args,
+		compiled_vararg,
+		compiled_body
+	);
+};
+
+compile.quote_atom = function (form, env) {
+	if (form instanceof CrispNumber) {
+		return format("new CrispNumber(%s)", form);
+	}
+
+	if (typeof form === 'boolean') {
+		return format("new CrispBoolean(%s)", form);
+	}
+
+	if (form instanceof CrispBoolean) {
+		return format("new CrispBoolean(%s)", form);
+	}
+
+	if (form instanceof CrispString) {
+		return format("new CrispString(%s)", form);
+	}
+
+	if (form instanceof Symbol) {
+		return format('new Symbol("%s")', form);
+	}
+
+	throw new Error(format("Unhandled compilation for quoted form: %j", form));
+};
+
+compile.quote = function (form, env) {
+	if (form instanceof List) {
+		return format("new List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+	}
+
+	if (form instanceof Vector) {
+		return format("new Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+	}
+
+	return compile.quote_atom(form, env);
+};
+
+compile.syntax_quote = function (form, env) {
+	var join_format;
+
+	if (form instanceof List) {
+		if (head_is(form, "unquote")) {
+			assert.equal(2, form.count(), "unquote takes exactly one argument.");
+			return compile(form.second(), env);
+		}
+
+		if (head_is(form, "unquote-splicing")) {
+			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
+			return compile(form.second(), env);
+		}
+	}
+
+	if (is_seq(form)) {
+		if (form.count() === 0) {
+			if (form instanceof List) {
+				return "new List([])";
+			}
+			if (form instanceof Vector) {
+				return "new Vector([])";
+			}
+
+			throw new Error("syntax-quoting an unknown sequence type: " + typeof form);
+		} else {
+			if (head_is(form.first(), "unquote-splicing")) {
+				join_format = "%s.prepend(%s)";
+			} else {
+				join_format = "%s.cons(%s)";
+			}
+
+			return format(
+				join_format,
+				compile.syntax_quote(form.rest(), env),
+				compile.syntax_quote(form.first(), env)
+			);
+		}
+	}
+
+	return compile.quote_atom(form, env);
+};
+
+compile.macro = function (form, env) {
+	return with_meta(
+		{macro: true},
+		compile.fn(form, env)
+	);
 };
 
 compile.macroexpand_1 = function (form, env) {
@@ -180,192 +368,6 @@ compile.application = function (form, env) {
 	}
 
 	return format("%s(%s)", compile(head, env), compiled_args.join(", "));
-};
-
-compile.vector = function (form, env) {
-	return form.toString();
-};
-
-compile.sequence = function (forms, env) {
-	return forms.map(function (form) { return compile(form, env); }).join(",");
-};
-
-compile.symbol = function (form, env) {
-	if (equal(form, new Symbol("nil"))) {
-		return form;
-	}
-
-	var expanded = form.toString(),
-		match = /(.*)\?$/.exec(expanded);
-
-	if (match) {
-		expanded = "is_" + match[1];
-	}
-
-	// JavaScript reserved symbols.
-	expanded = expanded.replace(/-/g,		"_");
-	expanded = expanded.replace(/\*\*/g,	"__");
-	expanded = expanded.replace(/\*/g,		"STAR");
-	expanded = expanded.replace(/!/g,		"BANG");
-
-	// JavaScript reserved words.
-	expanded = expanded.replace(/^do$/g,	"crisp_do");
-	expanded = expanded.replace(/^let$/g,	"crisp_let");
-
-	return format("%s", expanded);
-};
-
-compile.fn = function (form, env) {
-	var args = form.second(),
-		body = form.drop(2),
-	    vararg_point,
-        compiled_args,
-        compiled_vararg,
-        compiled_body;
-
-	vararg_point = args.indexOf(new Symbol("&"));
-	if (vararg_point >= 0) {
-		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
-		compiled_args = args.take(vararg_point).join(", ");
-
-		compiled_vararg = format(
-			"\tvar %s = new List(Array.prototype.slice.call(arguments, %d));\n",
-			args.nth(vararg_point + 1),
-			vararg_point
-		);
-	} else {
-		compiled_args = compile(form.second(), env);
-		compiled_args = form.second().join(", ");
-		compiled_vararg = "";
-	}
-	compiled_body = compile.sequence(body, env);
-
-	return format(
-		"(function (%s) {\n%s\treturn %s;\n})",
-		compiled_args,
-		compiled_vararg,
-		compiled_body
-	);
-};
-
-compile.macro = function (form, env) {
-	return with_meta(
-		{macro: true},
-		compile.fn(form, env)
-	);
-};
-
-compile.if = function (form, env) {
-	return format(
-		"%s ? %s : %s",
-		compile(form.second(), env),
-		compile(form.third(), env),
-		compile(form.fourth(), env)
-	);
-};
-
-compile.def = function (form, env) {
-	var name = form.second(),
-		value = form.third(),
-		compiled_name,
-		compiled_value,
-		evaled_value,
-		metadata;
-
-	assert.equal(true, name instanceof Symbol, "First argument to def must be a symbol.");
-
-	compiled_name = compile(name, env);
-	compiled_value = compile(value, env);
-
-	metadata = meta(compiled_value);
-	if (metadata !== undefined) {
-		if (metadata.macro === true) {
-			macros[name] = eval(compiled_value.toString());
-		}
-	}
-
-	return format(
-		"var %s = %s",
-		compiled_name,
-		compiled_value
-	);
-};
-
-compile.quote_atom = function (form, env) {
-	if (form instanceof CrispNumber) {
-		return format("new CrispNumber(%s)", form);
-	}
-
-	if (typeof form === 'boolean') {
-		return format("new CrispBoolean(%s)", form);
-	}
-
-	if (form instanceof CrispBoolean) {
-		return format("new CrispBoolean(%s)", form);
-	}
-
-	if (form instanceof CrispString) {
-		return format("new CrispString(%s)", form);
-	}
-
-	if (form instanceof Symbol) {
-		return format('new Symbol("%s")', form);
-	}
-
-	throw new Error(format("Unhandled compilation for quoted form: %j", form));
-};
-
-compile.quote = function (form, env) {
-	if (form instanceof List) {
-		return format("new List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
-	}
-
-	if (form instanceof Vector) {
-		return format("new Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
-	}
-
-	return compile.quote_atom(form, env);
-};
-
-compile.syntax_quote = function (form, env) {
-	var base;
-
-	if (form instanceof List)   { base = "new List([])";}
-	if (form instanceof Vector) { base = "new Vector([])";}
-
-	if (form instanceof List) {
-		if (head_is(form, "unquote")) {
-			assert.equal(2, form.count(), "unquote takes exactly one argument.");
-			return compile(form.second(), env);
-		}
-
-		if (head_is(form, "unquote-splicing")) {
-			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
-			return compile(form.second(), env);
-		}
-	}
-
-	if (is_seq(form)) {
-		if (form.count() === 0) {
-			return base;
-		} else {
-			if (head_is(form.first(), "unquote-splicing")) {
-				return format(
-					"%s.prepend(%s)",
-					compile.syntax_quote(form.rest(), env),
-					compile.syntax_quote(form.first(), env)
-				);
-			}
-
-			return format(
-				"%s.cons(%s)",
-				compile.syntax_quote(form.rest(), env),
-				compile.syntax_quote(form.first(), env)
-			);
-		}
-	}
-
-	return compile.quote_atom(form, env);
 };
 
 var preamble = function () {
