@@ -3,15 +3,15 @@
 
 var assert = require('assert');
 var format = require('util').format;
-var read_string = require('../lib/reader').read_string;
-var Symbol = require('../lib/types').Symbol;
-var CrispString = require('../lib/types').CrispString;
-var CrispNumber = require('../lib/types').CrispNumber;
-var CrispBoolean = require('../lib/types').CrispBoolean;
-var CrispNumber = require('../lib/types').CrispNumber;
-var Keyword = require('../lib/types').Keyword;
-var Vector = require('../lib/types').Vector;
-var List = require('../lib/types').List;
+var read_string = require('../build/reader').read_string;
+var Symbol = require('../build/types').Symbol;
+var CrispString = require('../build/types').CrispString;
+var CrispNumber = require('../build/types').CrispNumber;
+var CrispBoolean = require('../build/types').CrispBoolean;
+var CrispNumber = require('../build/types').CrispNumber;
+var Keyword = require('../build/types').Keyword;
+var Vector = require('../build/types').Vector;
+var List = require('../build/types').List;
 
 describe('reader', function () {
 	it('Numbers', function () {

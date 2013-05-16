@@ -5,19 +5,19 @@
 var vm				= require('vm');
 var format			= require('util').format;
 var assert			= require('assert');
-var Symbol			= require('../lib/types').Symbol;
-var CrispString		= require('../lib/types').CrispString;
-var CrispNumber		= require('../lib/types').CrispNumber;
-var CrispBoolean	= require('../lib/types').CrispBoolean;
-var Keyword			= require('../lib/types').Keyword;
-var Vector			= require('../lib/types').Vector;
-var List			= require('../lib/types').List;
-var Quote			= require('../lib/runtime').Quote;
-var Unquote			= require('../lib/runtime').Unquote;
-var SyntaxQuote		= require('../lib/runtime').SyntaxQuote;
-var Procedure		= require('../lib/runtime').Procedure;
-var equal			= require('../lib/runtime').equal;
-var compile_string	= require('../lib/compiler').compile_string;
+var Symbol			= require('../build/types').Symbol;
+var CrispString		= require('../build/types').CrispString;
+var CrispNumber		= require('../build/types').CrispNumber;
+var CrispBoolean	= require('../build/types').CrispBoolean;
+var Keyword			= require('../build/types').Keyword;
+var Vector			= require('../build/types').Vector;
+var List			= require('../build/types').List;
+var Quote			= require('../build/runtime').Quote;
+var Unquote			= require('../build/runtime').Unquote;
+var SyntaxQuote		= require('../build/runtime').SyntaxQuote;
+var Procedure		= require('../build/runtime').Procedure;
+var equal			= require('../build/runtime').equal;
+var compile_string	= require('../build/compiler').compile_string;
 
 var runIn = function (source, debug, env) {
 	var compiled, result;
@@ -58,7 +58,7 @@ describe('compiler', function () {
 		env.equal			= equal;
 		env.nil				= undefined;
 		env.crisp = {
-			types: require('../lib/types'),
+			types: require('../build/types'),
 		};
 	});
 

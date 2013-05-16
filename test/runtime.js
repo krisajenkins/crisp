@@ -2,8 +2,8 @@
 "use strict";
 
 var assert = require('assert');
-var equal = require('../lib/runtime').equal;
-var Environment = require('../lib/runtime').Environment;
+var equal = require('../build/runtime').equal;
+var Environment = require('../build/runtime').Environment;
 
 describe('Equality', function () {
 	it('undefined Equality', function () {

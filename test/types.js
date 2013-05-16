@@ -3,14 +3,14 @@
 
 var assert		= require('assert');
 
-var Symbol		= require('../lib/types').Symbol;
-var CrispString = require('../lib/types').CrispString;
-var CrispNumber = require('../lib/types').CrispNumber;
-var Keyword		= require('../lib/types').Keyword;
-var Vector		= require('../lib/types').Vector;
-var List		= require('../lib/types').List;
+var Symbol		= require('../build/types').Symbol;
+var CrispString = require('../build/types').CrispString;
+var CrispNumber = require('../build/types').CrispNumber;
+var Keyword		= require('../build/types').Keyword;
+var Vector		= require('../build/types').Vector;
+var List		= require('../build/types').List;
 
-var equal		= require('../lib/runtime').equal;
+var equal		= require('../build/runtime').equal;
 
 describe('Equality', function () {
 	it('Keyword Equality', function () {
