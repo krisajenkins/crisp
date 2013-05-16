@@ -56,3 +56,12 @@
 (defn cons
   [head seq]
   (Cons. head seq))
+
+(defmacro lazy-seq
+  [body]
+  `(crisp.types.LazySeq. (fn [] ~body)))
+
+(defn range
+  [x]
+  (lazy-seq
+   (cons x (range (inc x)))))

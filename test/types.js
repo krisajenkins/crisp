@@ -16,6 +16,7 @@ var seq			= crisp.types.seq;
 var first		= crisp.types.first;
 var rest		= crisp.types.rest;
 var next		= crisp.types.next;
+var range		= crisp.core.range;
 
 var equal		= crisp.core.equal;
 var format		= crisp.core.format;
@@ -178,5 +179,16 @@ describe('Equality', function () {
 		assert.deepEqual(List.EMPTY, rest(new Cons(undefined, List.EMPTY)));
 		assert.deepEqual(undefined, first(new Cons(undefined, undefined)));
 		assert.deepEqual(List.EMPTY, rest(new Cons(undefined, undefined)));
+	});
+
+	it('LazySeq, simple', function () {
+		var aseq = range(5);
+		assert.equal(true, aseq instanceof crisp.types.LazySeq);
+
+		assert.deepEqual(true, is_seq(aseq));
+
+		assert.deepEqual(5, first(aseq));
+		assert.deepEqual(6, first(rest(aseq)));
+		assert.deepEqual(6, first(next(aseq)));
 	});
 });
