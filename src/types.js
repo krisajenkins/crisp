@@ -256,10 +256,32 @@ Vector.prototype.toString = function () {
 
 exports.Vector = Vector;
 
+
+var Cons = function (head, seq) {
+	this.type = "Cons";
+	this.head = head;
+	this.seq = seq;
+	return this;
+};
+Cons.prototype.first = function () {
+	return this.head;
+};
+Cons.prototype.rest = function () {
+	return this.seq;
+};
+Cons.prototype.toString = function () {
+	return format("%s %s", this.head, this.seq);
+};
+exports.Cons = Cons;
+
 var is_seq = function (form) {
 	return form instanceof List
 		||
-		form instanceof Vector;
+		form instanceof Cons
+		||
+		form instanceof Vector
+		||
+		form instanceof Array;
 };
 exports.is_seq = is_seq;
 

@@ -1,4 +1,6 @@
+(def Cons (.-Cons (require "./types")))
 (def format (.-format (require "util")))
+(def equal (require "deep-equal"))
 
 (def defmacro
   (macro [name args body]
@@ -33,6 +35,14 @@
   [x]
   (= 0 x))
 
+(defn first
+  [x]
+  (.first x))
+
+(defn rest
+  [x]
+  (.rest x))
+
 ;; TODO Badly defined. Doesn't use the seq abstraction.
 (defn empty?
   [x]
@@ -50,3 +60,7 @@
 
 (defn inc [x] (+ 1 x))
 (defn dec [x] (- 1 x))
+
+(defn cons
+  [head seq]
+  (Cons. head seq))

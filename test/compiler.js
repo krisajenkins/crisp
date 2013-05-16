@@ -58,9 +58,7 @@ describe('compiler', function () {
 		env.equal			= equal;
 		env.nil				= undefined;
 		env.exports			= {};
-		env.crisp = {
-			types: require('../build/types'),
-		};
+		env.crisp = require('../build/crisp');
 	});
 
 	it('Numbers', function () {
