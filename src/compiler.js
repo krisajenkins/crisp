@@ -61,9 +61,9 @@ primitives[new Symbol("+")]		= function (args, env) {return format("(%s)", args.
 primitives[new Symbol("-")]		= function (args, env) {return format("(%s)", args.join(" - ")); };
 primitives[new Symbol("*")]		= function (args, env) {return format("(%s)", args.join(" * ")); };
 primitives[new Symbol("/")]		= function (args, env) {return format("(%s)", args.join(" / ")); };
+primitives[new Symbol("or")]	= function (args, env) {return format("(%s)", args.join(" || ")); };
+primitives[new Symbol("and")]	= function (args, env) {return format("(%s)", args.join(" && ")); };
 primitives[new Symbol("=")]		= function (args, env) {return format("equal(%s)", args.join(", ")); };
-primitives[new Symbol("or")]	= function (args, env) {return args.join(" || "); };
-primitives[new Symbol("and")]	= function (args, env) {return args.join(" and "); };
 primitives[new Symbol("instanceof")] = function (args, env) {
 	assert.equal(2, args.count(), "instanceof takes exactly two arguments. Got: " + args.count());
 	return args.join(" instanceof ");
