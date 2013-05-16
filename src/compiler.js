@@ -11,6 +11,11 @@ var Vector		= require('./types').Vector;
 var List		= require('./types').List;
 var is_seq		= require('./types').is_seq;
 var head_is		= require('./types').head_is;
+var first		= require('./types').first;
+var second		= require('./types').second;
+var third		= require('./types').third;
+var fourth		= require('./types').fourth;
+var rest		= require('./types').rest;
 
 var equal		= require('./runtime').equal;
 var read_string	= require('./reader').read_string;
@@ -35,9 +40,9 @@ var macros = {};
 var macroexpand_1 = function (form, env, debug) {
 	var macro, result;
 	if (form instanceof List) {
-		macro = macros[form.first()];
+		macro = macros[first(form)];
 		if (macro !== undefined) {
-			return macro.apply(env, form.rest().items); // TODO, in the apply call, what should this be?
+			return macro.apply(env, rest(form).items); // TODO, in the apply call, what should this be?
 		}
 	}
 
@@ -67,22 +72,22 @@ primitives[new Symbol("instanceof")] = function (args, env) {
 };
 primitives[new Symbol("typeof")] = function (args, env) {
 	assert.equal(1, args.count(), "typeof takes exactly one argument. Got: " + args.count());
-	return "typeof " + args.first();
+	return "typeof " + first(args);
 };
 primitives[new Symbol("not")] = function (args, env) {
 	assert.equal(1, args.count(), "not takes exactly one argument. Got: " + args.count());
-	return "!" + args.first();
+	return "!" + first(args);
 };
 primitives[new Symbol("aset")] = function (args, env) {
 	assert.equal(2, args.count(), "aset takes exactly two arguments. Got: " + args.count());
-	return crisp.core.format("%s = %s", args.first(), args.second());
+	return crisp.core.format("%s = %s", first(args), second(args));
 };
 primitives[new Symbol("gensym")] = function (args, env) {
 	assert.equal(true, args.count() < 2, "aset takes at most one argument. Got: " + args.count());
 	var prefix = "G__";
 
 	if (args.count() === 1) {
-		prefix = args.first();
+		prefix = first(args);
 	}
 
 	if (env.gensym_index === undefined) {
@@ -124,11 +129,11 @@ var compile = function compile(form, env) {
 	}
 
 	if (head_is(form, "quote")) {
-		return compile.quote(form.second(), env);
+		return compile.quote(second(form), env);
 	}
 
 	if (head_is(form, "syntax-quote")) {
-		return compile.syntax_quote(form.second(), env);
+		return compile.syntax_quote(second(form), env);
 	}
 
 	if (head_is(form, "macro")) {
@@ -174,14 +179,14 @@ compile.vector = function (form, env) {
 compile.if = function (form, env) {
 	return crisp.core.format(
 		"%s ? %s : %s",
-		compile(form.second(), env),
-		compile(form.third(), env),
-		compile(form.fourth(), env)
+		compile(second(form), env),
+		compile(third(form), env),
+		compile(fourth(form), env)
 	);
 };
 
 compile.def = function (form, env) {
-	var name = form.second(),
+	var name = second(form),
 		value = form.third(),
 		compiled_name,
 		compiled_value,
@@ -233,7 +238,7 @@ compile.sequence = function (forms, env) {
 };
 
 compile.fn = function (form, env) {
-	var args = form.second(),
+	var args = second(form),
 		body = form.drop(2),
 	    vararg_point,
         compiled_args,
@@ -251,8 +256,8 @@ compile.fn = function (form, env) {
 			vararg_point
 		);
 	} else {
-		compiled_args = compile(form.second(), env);
-		compiled_args = form.second().join(", ");
+		compiled_args = compile(second(form), env);
+		compiled_args = second(form).join(", ");
 		compiled_vararg = "";
 	}
 	compiled_body = compile.sequence(body, env);
@@ -307,12 +312,12 @@ compile.syntax_quote = function (form, env) {
 	if (form instanceof List) {
 		if (head_is(form, "unquote")) {
 			assert.equal(2, form.count(), "unquote takes exactly one argument.");
-			return compile(form.second(), env);
+			return compile(second(form), env);
 		}
 
 		if (head_is(form, "unquote-splicing")) {
 			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
-			return compile(form.second(), env);
+			return compile(second(form), env);
 		}
 	}
 
@@ -327,7 +332,7 @@ compile.syntax_quote = function (form, env) {
 
 			throw new Error("syntax-quoting an unknown sequence type: " + typeof form);
 		} else {
-			if (head_is(form.first(), "unquote-splicing")) {
+			if (head_is(first(form), "unquote-splicing")) {
 				join_format = "%s.prepend(%s)";
 			} else {
 				join_format = "%s.cons(%s)";
@@ -335,8 +340,8 @@ compile.syntax_quote = function (form, env) {
 
 			return crisp.core.format(
 				join_format,
-				compile.syntax_quote(form.rest(), env),
-				compile.syntax_quote(form.first(), env)
+				compile.syntax_quote(rest(form), env),
+				compile.syntax_quote(first(form), env)
 			);
 		}
 	}
@@ -356,7 +361,7 @@ compile.macroexpand_1 = function (form, env) {
 	var arg, expanded;
 
 	assert.equal(2, form.count(), "macroexpand-1 takes exactly one argument.");
-	arg = form.second();
+	arg = second(form);
 
 	assert.equal(true, head_is(arg, "quote"), "Argument to macroexpand-1 must be quoted.");
 	expanded = macroexpand_1(arg.second(), env);
@@ -367,8 +372,8 @@ compile.macroexpand_1 = function (form, env) {
 compile.application = function (form, env) {
 	var head, args, compiled_args, stored, match, expanded;
 
-	head = form.first();
-	args = form.rest();
+	head = first(form);
+	args = rest(form);
 
 	compiled_args = args.map(function (f) { return compile(f, env); });
 
@@ -387,16 +392,16 @@ compile.application = function (form, env) {
 		match = /^.-(.*)/.exec(head.name);
 		if (match) {
 			assert.equal(1, args.count(), "property access takes exactly one argument.");
-			return crisp.core.format("%s.%s", compiled_args.first(), compile(new Symbol(match[1]), env));
+			return crisp.core.format("%s.%s", first(compiled_args), compile(new Symbol(match[1]), env));
 		}
 
 		match = /^\.(.*)/.exec(head.name);
 		if (match) {
 			return crisp.core.format(
 				"%s.%s(%s)",
-				compiled_args.first(),
+				first(compiled_args),
 				compile(new Symbol(match[1], env)),
-				compiled_args.rest().join(", ")
+				rest(compiled_args).join(", ")
 			);
 		}
 	}

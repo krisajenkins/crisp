@@ -35,14 +35,6 @@
   [x]
   (= 0 x))
 
-(defn first
-  [x]
-  (.first x))
-
-(defn rest
-  [x]
-  (.rest x))
-
 ;; TODO Badly defined. Doesn't use the seq abstraction.
 (defn empty?
   [x]

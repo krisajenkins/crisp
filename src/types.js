@@ -95,6 +95,13 @@ Keyword.prototype.toString = function () {
 
 exports.Keyword = Keyword;
 
+var is_seq = function (form) {
+	return form !== undefined
+		&&
+		typeof form.seq === 'function';
+};
+exports.is_seq = is_seq;
+
 var List = function (items) {
 	this.type = "List";
 	this.items = items;
@@ -102,7 +109,26 @@ var List = function (items) {
 };
 
 List.prototype.type = "crisp.types/list";
+List.EMPTY = new List([]);
+List.prototype.seq = function () {
+	if (this.items.length > 0) {
+		return this;
+	}
+};
+List.prototype.first = function () {
+	if (this.items.length > 0) {
+		return this.items[0];
+	}
 
+	return undefined;
+};
+List.prototype.rest = function () {
+	if (this.items.length > 0) {
+		return new List(this.items.slice(1));
+	}
+
+	return List.EMPTY;
+};
 List.prototype.cons = function (item) {
 	return new List([item].concat(this.items));
 };
@@ -130,11 +156,6 @@ List.prototype.map = function (f) {
 List.prototype.count = function () {
 	return this.items.length;
 };
-List.prototype.first = function () {
-	if (this.items.length > 0) {
-		return this.items[0];
-	}
-};
 List.prototype.second = function () {
 	if (this.items.length > 1) {
 		return this.items[1];
@@ -153,24 +174,15 @@ List.prototype.fourth = function () {
 List.prototype.nth = function (n) {
 	return this.items[n];
 };
-List.prototype.rest = function () {
-	return new List(this.items.slice(1));
-};
 List.prototype.take = function (n) {
 	return new List(this.items.slice(0, n));
 };
 List.prototype.drop = function (n) {
 	return new List(this.items.slice(n));
 };
-List.prototype.next = function () {
-	// TODO This is wrong.
-	return new List(this.items.slice(1));
-};
-
 List.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
-
 List.prototype.toString = function () {
 	return format("(%s)", this.items.map(function (x) { return x.toString(); }).join(", "));
 };
@@ -184,14 +196,28 @@ var Vector = function (items) {
 };
 
 Vector.prototype.type = "crisp.types/vector";
-
-Vector.prototype.slice = function () {
-	this.items.slice(arguments);
+Vector.EMPTY = new Vector([]);
+Vector.prototype.seq = function () {
+	if (this.items.length > 0) {
+		return this;
+	}
 };
 Vector.prototype.first = function () {
 	if (this.items.length > 0) {
 		return this.items[0];
 	}
+
+	return undefined;
+};
+Vector.prototype.rest = function () {
+	if (this.items.length > 0) {
+		return new Vector(this.items.slice(1));
+	}
+
+	return Vector.EMPTY;
+};
+Vector.prototype.slice = function () {
+	this.items.slice(arguments);
 };
 Vector.prototype.count = function () {
 	return this.items.length;
@@ -210,9 +236,6 @@ Vector.prototype.take = function (n) {
 };
 Vector.prototype.drop = function (n) {
 	return new Vector(this.items.slice(n));
-};
-Vector.prototype.rest = function () {
-	return new Vector(this.items.slice(1));
 };
 Vector.prototype.cons = function (item) {
 	return new Vector([item].concat(this.items));
@@ -256,34 +279,100 @@ Vector.prototype.toString = function () {
 
 exports.Vector = Vector;
 
-
-var Cons = function (head, seq) {
+var Cons = function (head, aseq) {
 	this.type = "Cons";
 	this.head = head;
-	this.seq = seq;
+	this.aseq = seq(aseq);
+	return this;
+};
+Cons.prototype.type = "crisp.types/cons";
+Cons.prototype.seq = function () {
 	return this;
 };
 Cons.prototype.first = function () {
 	return this.head;
 };
 Cons.prototype.rest = function () {
-	return this.seq;
+	if (this.aseq === undefined) {
+		return List.EMPTY;
+	}
+
+	return this.aseq;
 };
 Cons.prototype.toString = function () {
-	return format("%s %s", this.head, this.seq);
+	return format("%s %s", this.head, this.aseq);
 };
 exports.Cons = Cons;
 
-var is_seq = function (form) {
-	return form instanceof List
-		||
-		form instanceof Cons
-		||
-		form instanceof Vector
-		||
-		form instanceof Array;
+var LazySeq = function (thunk) {
+	this.type = "LazySeq";
+	this.thunk = thunk;
+	return this;
 };
-exports.is_seq = is_seq;
+exports.LazySeq = LazySeq;
+
+/* NOTES:
+   (rest aseq) never returns nil.
+   (seq aseq) either returns a seq or nil.
+ */
+
+var seq = function (aseq) {
+	if (aseq === undefined) {
+		return undefined;
+	}
+
+	assert.equal(true, is_seq(aseq), "Collection of type " + (typeof aseq) + " does not implement seq.");
+
+	return aseq.seq();
+};
+exports.seq = seq;
+var first = function (aseq) {
+	if (aseq === undefined) {
+		return undefined;
+	}
+
+	aseq = seq(aseq);
+	if (aseq === undefined) {
+		return undefined;
+	}
+
+	return aseq.first();
+};
+exports.first = first;
+
+var rest = function (aseq) {
+	if (aseq === undefined) {
+		return List.EMPTY;
+	}
+
+	aseq = seq(aseq);
+	if (aseq === undefined) {
+		return List.EMPTY;
+	}
+
+	return aseq.rest();
+};
+exports.rest = rest;
+
+var next = function (aseq) {
+	return seq(rest(aseq));
+};
+exports.next = next;
+
+var second = function (aseq) {
+	return first(rest(aseq));
+};
+exports.second = second;
+
+var third = function (aseq) {
+	return first(rest(rest(aseq)));
+};
+exports.third = third;
+
+var fourth = function (aseq) {
+	return first(rest(rest(rest(aseq))));
+};
+exports.fourth = fourth;
 
 var head_is = function (form, symbol_name) {
 	return form instanceof List
