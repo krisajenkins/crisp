@@ -10,7 +10,7 @@ module.exports = function (grunt) {
 				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
 			},
 			build: {
-				src: 'lib/<%= pkg.name %>.js',
+				src: 'build/<%= pkg.name %>.js',
 				dest: 'build/<%= pkg.name %>.min.js'
 			}
 		},
@@ -28,7 +28,7 @@ module.exports = function (grunt) {
 					expand: true,
 					cwd: 'src/',
 					src: ['**/*.crisp'],
-					dest: 'lib/',
+					dest: 'build/',
 					ext: '.js'
 				}]
 			}
@@ -39,21 +39,21 @@ module.exports = function (grunt) {
 					expand: true,
 					cwd: 'src/',
 					src: '**/*.js',
-					dest: 'lib/'
+					dest: 'build/'
 				}]
 			},
 			approve: {
 				files: [{
 					expand: true,
-					cwd: 'lib/',
+					cwd: 'build/',
 					src: '**/*.js',
-					dest: 'previous/'
+					dest: 'lib/'
 				}]
 			}
 		},
 		clean: {
-			build: ["lib/"],
-			approve: ["previous/"]
+			build: ["build/"],
+			approve: ["lib/"]
 		}
 	});
 
@@ -65,7 +65,7 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-beautify');
 
 	grunt.registerMultiTask('crisp', "Compile crisp files to JavaScript", function () {
-		var compiler = require('./previous/compiler'),
+		var compiler = require('./lib/compiler'),
 			env = {};
 
 		grunt.log.writeln("Compiling crisps:");
