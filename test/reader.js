@@ -2,7 +2,6 @@
 "use strict";
 
 var assert = require('assert');
-var format = require('util').format;
 var read_string = require('../build/reader').read_string;
 var Symbol = require('../build/types').Symbol;
 var CrispString = require('../build/types').CrispString;

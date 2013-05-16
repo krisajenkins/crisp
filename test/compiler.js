@@ -3,15 +3,15 @@
 "use strict";
 
 var vm				= require('vm');
-var format			= require('util').format;
 var assert			= require('assert');
-var Symbol			= require('../build/types').Symbol;
-var CrispString		= require('../build/types').CrispString;
-var CrispNumber		= require('../build/types').CrispNumber;
-var CrispBoolean	= require('../build/types').CrispBoolean;
-var Keyword			= require('../build/types').Keyword;
-var Vector			= require('../build/types').Vector;
-var List			= require('../build/types').List;
+var crisp			= require('../build/crisp');
+var Symbol			= crisp.types.Symbol;
+var CrispString		= crisp.types.CrispString;
+var CrispNumber		= crisp.types.CrispNumber;
+var CrispBoolean	= crisp.types.CrispBoolean;
+var Keyword			= crisp.types.Keyword;
+var Vector			= crisp.types.Vector;
+var List			= crisp.types.List;
 var Quote			= require('../build/runtime').Quote;
 var Unquote			= require('../build/runtime').Unquote;
 var SyntaxQuote		= require('../build/runtime').SyntaxQuote;
@@ -57,6 +57,7 @@ describe('compiler', function () {
 		env = {};
 		env.equal			= equal;
 		env.nil				= undefined;
+		env.exports			= {};
 		env.crisp = {
 			types: require('../build/types'),
 		};

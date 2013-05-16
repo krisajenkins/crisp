@@ -1,0 +1,52 @@
+(def format (.-format (require "util")))
+
+(def defmacro
+  (macro [name args body]
+         `(def ~name
+            (macro ~args ~body))))
+
+(defmacro do
+  [& body]
+  `((fn [] ~@body)))
+
+(defmacro defn
+  [name args body]
+  `(def ~name
+     (fn ~args ~body)))
+
+;; TODO This could be made more efficient. Take every even-numbered
+;; binding as the arg, every odd-numbered binding as the value.
+(defmacro let
+  [bindings & body]
+  (if (lt (.count bindings) 1)
+    `((fn [] ~@body))
+    `((fn [~(.first bindings)]
+        (let ~(.drop bindings 2)
+          ~@body))
+      ~(.second bindings))))
+
+(defn number?
+  [x]
+  (= (typeof x) "number"))
+
+(defn zero?
+  [x]
+  (= 0 x))
+
+;; TODO Badly defined. Doesn't use the seq abstraction.
+(defn empty?
+  [x]
+  (zero? (.count x)))
+
+(def atom?
+  (fn [form]
+    (not (or (instanceof form Array)
+             (instanceof form List)))))
+
+(def self-evaluating?
+  (fn [form]
+    (or (= (typeof form) "number")
+        (= (typeof form) "string"))))
+
+(defn inc [x] (+ 1 x))
+(defn dec [x] (- 1 x))

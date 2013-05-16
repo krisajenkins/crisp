@@ -1,23 +1,19 @@
 /*global exports: true */
 "use strict";
 
-var format			= require('util').format;
-var assert			= require('assert');
-var fs				= require('fs');
+var assert		= require('assert');
+var fs			= require('fs');
+var crisp		= require('./crisp');
 
-var crisp = {
-	types: require('./types')
-};
+var Symbol		= require('./types').Symbol;
+var Keyword		= require('./types').Keyword;
+var Vector		= require('./types').Vector;
+var List		= require('./types').List;
+var is_seq		= require('./types').is_seq;
+var head_is		= require('./types').head_is;
 
-var Symbol			= require('./types').Symbol;
-var Keyword			= require('./types').Keyword;
-var Vector			= require('./types').Vector;
-var List			= require('./types').List;
-var is_seq			= require('./types').is_seq;
-var head_is			= require('./types').head_is;
-
-var equal			= require('./runtime').equal;
-var read_string		= require('./reader').read_string;
+var equal		= require('./runtime').equal;
+var read_string	= require('./reader').read_string;
 
 var meta = function (object) {
 	if (object instanceof Object) {
@@ -58,13 +54,13 @@ var macroexpand = function (form, env) {
 };
 
 var primitives = {};
-primitives[new Symbol("+")]		= function (args, env) {return format("(%s)", args.join(" + ")); };
-primitives[new Symbol("-")]		= function (args, env) {return format("(%s)", args.join(" - ")); };
-primitives[new Symbol("*")]		= function (args, env) {return format("(%s)", args.join(" * ")); };
-primitives[new Symbol("/")]		= function (args, env) {return format("(%s)", args.join(" / ")); };
-primitives[new Symbol("or")]	= function (args, env) {return format("(%s)", args.join(" || ")); };
-primitives[new Symbol("and")]	= function (args, env) {return format("(%s)", args.join(" && ")); };
-primitives[new Symbol("=")]		= function (args, env) {return format("equal(%s)", args.join(", ")); };
+primitives[new Symbol("+")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" + ")); };
+primitives[new Symbol("-")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" - ")); };
+primitives[new Symbol("*")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" * ")); };
+primitives[new Symbol("/")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" / ")); };
+primitives[new Symbol("or")]	= function (args, env) {return crisp.core.format("(%s)", args.join(" || ")); };
+primitives[new Symbol("and")]	= function (args, env) {return crisp.core.format("(%s)", args.join(" && ")); };
+primitives[new Symbol("=")]		= function (args, env) {return crisp.core.format("equal(%s)", args.join(", ")); };
 primitives[new Symbol("instanceof")] = function (args, env) {
 	assert.equal(2, args.count(), "instanceof takes exactly two arguments. Got: " + args.count());
 	return args.join(" instanceof ");
@@ -79,7 +75,7 @@ primitives[new Symbol("not")] = function (args, env) {
 };
 primitives[new Symbol("aset")] = function (args, env) {
 	assert.equal(2, args.count(), "aset takes exactly two arguments. Got: " + args.count());
-	return format("%s = %s", args.first(), args.second());
+	return crisp.core.format("%s = %s", args.first(), args.second());
 };
 
 var compile = function compile(form, env) {
@@ -87,6 +83,7 @@ var compile = function compile(form, env) {
 
 	if (form === undefined) { return "undefined"; }
 
+	if (typeof form === "string") { return form; }
 	if (form instanceof crisp.types.CrispNumber) { return form.toString(); }
 	if (form instanceof crisp.types.CrispBoolean) { return form.toString(); }
 	if (form instanceof crisp.types.CrispString) { return form.toString(); }
@@ -152,7 +149,7 @@ compile.symbol = function (form, env) {
 	expanded = expanded.replace(/^do$/g,	"crisp_do");
 	expanded = expanded.replace(/^let$/g,	"crisp_let");
 
-	return format("%s", expanded);
+	return crisp.core.format("%s", expanded);
 };
 
 compile.vector = function (form, env) {
@@ -160,7 +157,7 @@ compile.vector = function (form, env) {
 };
 
 compile.if = function (form, env) {
-	return format(
+	return crisp.core.format(
 		"%s ? %s : %s",
 		compile(form.second(), env),
 		compile(form.third(), env),
@@ -174,25 +171,46 @@ compile.def = function (form, env) {
 		compiled_name,
 		compiled_value,
 		evaled_value,
-		metadata;
+		metadata,
+		statements = [];
 
 	assert.equal(true, name instanceof Symbol, "First argument to def must be a symbol.");
 
 	compiled_name = compile(name, env);
 	compiled_value = compile(value, env);
 
+	statements.push(
+		crisp.core.format(
+			"var %s = %s;",
+			compiled_name,
+			compiled_value
+		)
+	);
+
 	metadata = meta(compiled_value);
 	if (metadata !== undefined) {
 		if (metadata.macro === true) {
 			macros[name] = eval(compiled_value.toString());
 		}
+
+		statements.push(
+			crisp.core.format(
+				"%s.__metadata__ = %j;",
+				compiled_name,
+				metadata
+			)
+		);
 	}
 
-	return format(
-		"var %s = %s",
-		compiled_name,
-		compiled_value
+	statements.push(
+		crisp.core.format(
+			"exports.%s = %s",
+			compiled_name,
+			compiled_name
+		)
 	);
+
+	return statements.join("\n");
 };
 
 compile.sequence = function (forms, env) {
@@ -212,7 +230,7 @@ compile.fn = function (form, env) {
 		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
 		compiled_args = args.take(vararg_point).join(", ");
 
-		compiled_vararg = format(
+		compiled_vararg = crisp.core.format(
 			"\tvar %s = new crisp.types.List(Array.prototype.slice.call(arguments, %d));\n",
 			args.nth(vararg_point + 1),
 			vararg_point
@@ -224,7 +242,7 @@ compile.fn = function (form, env) {
 	}
 	compiled_body = compile.sequence(body, env);
 
-	return format(
+	return crisp.core.format(
 		"(function (%s) {\n%s\treturn %s;\n})",
 		compiled_args,
 		compiled_vararg,
@@ -234,7 +252,7 @@ compile.fn = function (form, env) {
 
 compile.quote_atom = function (form, env) {
 	if (form instanceof crisp.types.CrispNumber) {
-		return format("new crisp.types.CrispNumber(%s)", form);
+		return crisp.core.format("new crisp.types.CrispNumber(%s)", form);
 	}
 
 	if (
@@ -242,27 +260,27 @@ compile.quote_atom = function (form, env) {
 		||
 		form instanceof crisp.types.CrispBoolean
 	) {
-		return format("new crisp.types.CrispBoolean(%s)", form);
+		return crisp.core.format("new crisp.types.CrispBoolean(%s)", form);
 	}
 
 	if (form instanceof crisp.types.CrispString) {
-		return format("new crisp.types.CrispString(%s)", form);
+		return crisp.core.format("new crisp.types.CrispString(%s)", form);
 	}
 
 	if (form instanceof Symbol) {
-		return format('new crisp.types.Symbol("%s")', form);
+		return crisp.core.format('new crisp.types.Symbol("%s")', form);
 	}
 
-	throw new Error(format("Unhandled compilation for quoted form: %j", form));
+	throw new Error(crisp.core.format("Unhandled compilation for quoted form: %j", form));
 };
 
 compile.quote = function (form, env) {
 	if (form instanceof List) {
-		return format("new crisp.types.List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+		return crisp.core.format("new crisp.types.List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
 	}
 
 	if (form instanceof Vector) {
-		return format("new crisp.types.Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+		return crisp.core.format("new crisp.types.Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
 	}
 
 	return compile.quote_atom(form, env);
@@ -300,7 +318,7 @@ compile.syntax_quote = function (form, env) {
 				join_format = "%s.cons(%s)";
 			}
 
-			return format(
+			return crisp.core.format(
 				join_format,
 				compile.syntax_quote(form.rest(), env),
 				compile.syntax_quote(form.first(), env)
@@ -341,25 +359,25 @@ compile.application = function (form, env) {
 
 	stored = primitives[head];
 	if (stored !== undefined) {
-		return format("%s", stored(compiled_args, env));
+		return crisp.core.format("%s", stored(compiled_args, env));
 	}
 
 	// Interop.
 	if (head instanceof Symbol) {
 		match = /(.*)\.$/.exec(head.name);
 		if (match) {
-			return format("new %s(%s)", compile(new Symbol(match[1]), env), compiled_args.join(", "));
+			return crisp.core.format("new %s(%s)", compile(new Symbol(match[1]), env), compiled_args.join(", "));
 		}
 
 		match = /^.-(.*)/.exec(head.name);
 		if (match) {
 			assert.equal(1, args.count(), "property access takes exactly one argument.");
-			return format("%s.%s", compiled_args.first(), compile(new Symbol(match[1]), env));
+			return crisp.core.format("%s.%s", compiled_args.first(), compile(new Symbol(match[1]), env));
 		}
 
 		match = /^\.(.*)/.exec(head.name);
 		if (match) {
-			return format(
+			return crisp.core.format(
 				"%s.%s(%s)",
 				compiled_args.first(),
 				compile(new Symbol(match[1], env)),
@@ -368,17 +386,14 @@ compile.application = function (form, env) {
 		}
 	}
 
-	return format("%s(%s)", compile(head, env), compiled_args.join(", "));
+	return crisp.core.format("%s(%s)", compile(head, env), compiled_args.join(", "));
 };
 
 var preamble = function () {
 	return [
 		"// START",
 		'"use strict";\n',
-		"var crisp = {};",
-		"crisp.types = require('./types');",
-		"crisp.core = require('./core');",
-		"crisp.util = require('util');",
+		"var crisp = require('./crisp');",
 		"",
 		"",
 	].join("\n");
