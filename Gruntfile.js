@@ -5,14 +5,11 @@ module.exports = function (grunt) {
 	grunt.option('stack', true);
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		browserify: {
-			'build/browser.js': ['build/compiler.js']
-		},
 		'closure-compiler': {
 			build: {
 				closurePath: '/Users/kris/Work/Sketches/crisp/',
-				js: 'build/browser.js',
-				jsOutputFile: 'build/browser.min.js',
+				js: 'build/browsergen.js',
+				jsOutputFile: 'build/browsergen.min.js',
 				maxBuffer: 500,
 				options: {
 					compilation_level: 'ADVANCED_OPTIMIZATIONS',
@@ -69,7 +66,10 @@ module.exports = function (grunt) {
 		clean: {
 			build: ["build/"],
 			approve: ["lib/"]
-		}
+		},
+		browserify: {
+			'build/browsergen.js': ['build/browser.js']
+		},
 	});
 
 	// Load plugins.
@@ -78,8 +78,8 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-cafe-mocha');
 	grunt.loadNpmTasks('grunt-beautify');
-	grunt.loadNpmTasks('grunt-browserify');
 	grunt.loadNpmTasks('grunt-closure-compiler');
+	grunt.loadNpmTasks('grunt-browserify');
 
 	grunt.registerMultiTask('crisp', "Compile crisp files to JavaScript", function () {
 		var compiler = require('./lib/compiler'),
@@ -106,7 +106,7 @@ module.exports = function (grunt) {
 	});
 
 	// Default task(s).
-	grunt.registerTask('compile', ['clean:build', 'copy:build', 'crisp']);
+	grunt.registerTask('compile', ['clean:build', 'copy:build', 'crisp', 'browserify']);
 	grunt.registerTask('approve', ['default', 'clean:approve', 'copy:approve']);
 	grunt.registerTask('test', ['cafemocha']);
 	grunt.registerTask('default', ['compile', 'test']);
