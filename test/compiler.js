@@ -55,18 +55,11 @@ describe('compiler', function () {
 
 	beforeEach(function () {
 		env = {};
-		env.CrispNumber		= CrispNumber;
-		env.CrispString		= CrispString;
-		env.CrispBoolean	= CrispBoolean;
-		env.List			= List;
-		env.Vector			= Vector;
-		env.Symbol			= Symbol;
-		env.Quote			= Quote;
-		env.Unquote			= Unquote;
-		env.SyntaxQuote		= SyntaxQuote;
-		env.Procedure		= Procedure;
 		env.equal			= equal;
 		env.nil				= undefined;
+		env.crisp = {
+			types: require('../lib/types'),
+		};
 	});
 
 	it('Numbers', function () {

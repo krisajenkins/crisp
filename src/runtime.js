@@ -4,14 +4,12 @@
 
 var assert = require("assert");
 var format = require("util").format;
-var Keyword = require("./types").Keyword;
-
-var Symbol = require("./types").Symbol;
-var Vector = require("./types").Vector;
-var List = require("./types").List;
+var crisp = {
+	types: require('./types')
+};
 
 var is_atom = function (form) {
-	return !((form instanceof Array) || (form instanceof List) || (form instanceof Vector));
+	return !((form instanceof Array) || (form instanceof crisp.types.List) || (form instanceof crisp.types.Vector));
 };
 
 exports.is_atom = is_atom;

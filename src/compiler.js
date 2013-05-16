@@ -5,9 +5,10 @@ var format			= require('util').format;
 var assert			= require('assert');
 var fs				= require('fs');
 
-var CrispString		= require('./types').CrispString;
-var CrispNumber		= require('./types').CrispNumber;
-var CrispBoolean	= require('./types').CrispBoolean;
+var crisp = {
+	types: require('./types')
+};
+
 var Symbol			= require('./types').Symbol;
 var Keyword			= require('./types').Keyword;
 var Vector			= require('./types').Vector;
@@ -86,9 +87,9 @@ var compile = function compile(form, env) {
 
 	if (form === undefined) { return "undefined"; }
 
-	if (form instanceof CrispNumber) { return form.toString(); }
-	if (form instanceof CrispBoolean) { return form.toString(); }
-	if (form instanceof CrispString) { return form.toString(); }
+	if (form instanceof crisp.types.CrispNumber) { return form.toString(); }
+	if (form instanceof crisp.types.CrispBoolean) { return form.toString(); }
+	if (form instanceof crisp.types.CrispString) { return form.toString(); }
 
 	if (form instanceof Symbol) {
 		return compile.symbol(form, env);
@@ -212,7 +213,7 @@ compile.fn = function (form, env) {
 		compiled_args = args.take(vararg_point).join(", ");
 
 		compiled_vararg = format(
-			"\tvar %s = new List(Array.prototype.slice.call(arguments, %d));\n",
+			"\tvar %s = new crisp.types.List(Array.prototype.slice.call(arguments, %d));\n",
 			args.nth(vararg_point + 1),
 			vararg_point
 		);
@@ -232,24 +233,24 @@ compile.fn = function (form, env) {
 };
 
 compile.quote_atom = function (form, env) {
-	if (form instanceof CrispNumber) {
-		return format("new CrispNumber(%s)", form);
+	if (form instanceof crisp.types.CrispNumber) {
+		return format("new crisp.types.CrispNumber(%s)", form);
 	}
 
-	if (typeof form === 'boolean') {
-		return format("new CrispBoolean(%s)", form);
+	if (
+		typeof form === 'boolean'
+		||
+		form instanceof crisp.types.CrispBoolean
+	) {
+		return format("new crisp.types.CrispBoolean(%s)", form);
 	}
 
-	if (form instanceof CrispBoolean) {
-		return format("new CrispBoolean(%s)", form);
-	}
-
-	if (form instanceof CrispString) {
-		return format("new CrispString(%s)", form);
+	if (form instanceof crisp.types.CrispString) {
+		return format("new crisp.types.CrispString(%s)", form);
 	}
 
 	if (form instanceof Symbol) {
-		return format('new Symbol("%s")', form);
+		return format('new crisp.types.Symbol("%s")', form);
 	}
 
 	throw new Error(format("Unhandled compilation for quoted form: %j", form));
@@ -257,11 +258,11 @@ compile.quote_atom = function (form, env) {
 
 compile.quote = function (form, env) {
 	if (form instanceof List) {
-		return format("new List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+		return format("new crisp.types.List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
 	}
 
 	if (form instanceof Vector) {
-		return format("new Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+		return format("new crisp.types.Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
 	}
 
 	return compile.quote_atom(form, env);
@@ -285,10 +286,10 @@ compile.syntax_quote = function (form, env) {
 	if (is_seq(form)) {
 		if (form.count() === 0) {
 			if (form instanceof List) {
-				return "new List([])";
+				return "new crisp.types.List([])";
 			}
 			if (form instanceof Vector) {
-				return "new Vector([])";
+				return "new crisp.types.Vector([])";
 			}
 
 			throw new Error("syntax-quoting an unknown sequence type: " + typeof form);
@@ -374,15 +375,10 @@ var preamble = function () {
 	return [
 		"// START",
 		'"use strict";\n',
-		"var CrispBoolean = require('../lib/types').CrispBoolean;",
-		"var CrispString = require('../lib/types').CrispString;",
-		"var CrispNumber = require('../lib/types').CrispNumber;",
-		"var Keyword = require('../lib/types').Keyword;",
-		"var List = require('../lib/types').List;",
-		"var Symbol = require('../lib/types').Symbol;",
-		"var Vector = require('../lib/types').Vector;",
-		"var equal = require('deep-equal');",
-		"var format = require('util').format;",
+		"var crisp = {};",
+		"crisp.types = require('../lib/types');",
+		"crisp.core = require('../lib/core');",
+		"crisp.util = require('util');",
 		"",
 		"",
 	].join("\n");
