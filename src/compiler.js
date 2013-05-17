@@ -271,7 +271,11 @@ compile.fn = function (form, env) {
 };
 
 compile.quote_atom = function (form, env) {
-	if (form instanceof crisp.types.CrispNumber) {
+	if (
+		typeof form === 'number'
+		||
+		form instanceof crisp.types.CrispNumber
+	) {
 		return crisp.core.format("new crisp.types.CrispNumber(%s)", form);
 	}
 
@@ -283,15 +287,23 @@ compile.quote_atom = function (form, env) {
 		return crisp.core.format("new crisp.types.CrispBoolean(%s)", form);
 	}
 
-	if (form instanceof crisp.types.CrispString) {
+	if (
+		typeof form === 'string'
+		||
+		form instanceof crisp.types.CrispString
+	) {
 		return crisp.core.format("new crisp.types.CrispString(%s)", form);
+	}
+
+	if (form instanceof Keyword) {
+		return crisp.core.format('new crisp.types.Keyword(%s)', form);
 	}
 
 	if (form instanceof Symbol) {
 		return crisp.core.format('new crisp.types.Symbol("%s")', form);
 	}
 
-	throw new Error(crisp.core.format("Unhandled compilation for quoted form: %j", form));
+	throw new Error(crisp.core.format("Unhandled compilation for quoted form: %j (type %s)", form, typeof form));
 };
 
 compile.quote = function (form, env) {
