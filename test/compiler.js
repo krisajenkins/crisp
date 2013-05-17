@@ -4,6 +4,8 @@
 
 var vm				= require('vm');
 var assert			= require('assert');
+var inspect			= require('util').inspect;
+var format			= require('util').format;
 var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
 var CrispString		= crisp.types.CrispString;
@@ -12,6 +14,9 @@ var CrispBoolean	= crisp.types.CrispBoolean;
 var Keyword			= crisp.types.Keyword;
 var Vector			= crisp.types.Vector;
 var List			= crisp.types.List;
+var Cons			= crisp.types.Cons;
+var cons			= crisp.types.cons;
+var assertEq		= require('../build/runtime').assertEq;
 var Quote			= require('../build/runtime').Quote;
 var Unquote			= require('../build/runtime').Unquote;
 var SyntaxQuote		= require('../build/runtime').SyntaxQuote;
@@ -26,8 +31,7 @@ var runIn = function (source, debug, env) {
 
 	if (debug !== undefined && debug !== false) {
 		console.log("\n==== COMPILED ====");
-		console.log(compiled);
-		console.log(env);
+		console.log(inspect(compiled, {depth: null}));
 		console.log("====\n");
 	}
 
@@ -42,12 +46,12 @@ var runIn = function (source, debug, env) {
 
 var compilesTo = function (source, expected, env, message) {
 	var result = runIn(source, false, env);
-	assert.deepEqual(result, expected, message);
+	assertEq(result, expected, message);
 };
 
 var kompilesTo = function (source, expected, env, message) {
 	var result = runIn(source, true, env);
-	assert.deepEqual(result, expected, message);
+	assertEq(result, expected, message);
 };
 
 describe('compiler', function () {
@@ -136,9 +140,34 @@ describe('compiler', function () {
 	it('Simple Syntax Quote', function () {
 		compilesTo("`1", new CrispNumber(1), env);
 		compilesTo("`\"thing\"", new CrispString("thing"), env);
-		compilesTo('`(1 2 "test")', new List([new CrispNumber(1), new CrispNumber(2), new CrispString("test")]), env);
-		compilesTo('`[1 2 "test"]', new Vector([new CrispNumber(1), new CrispNumber(2), new CrispString("test")]), env);
-		compilesTo("`(1 '(2 3))", new List([new CrispNumber(1), new List([new Symbol("quote"), new List([new CrispNumber(2), new CrispNumber(3)])])]), env);
+		compilesTo(
+			'`(1 2 "test")',
+			new List([
+				new CrispNumber(1),
+				new CrispNumber(2),
+				new CrispString("test")
+			]),
+			env
+		);
+		compilesTo(
+			'`[1 2 "test"]',
+			cons(new CrispNumber(1),
+				 cons(new CrispNumber(2),
+					  cons(new CrispString("test"),
+						   Vector.EMPTY))),
+			env
+		);
+
+		compilesTo(
+			"`(1 '(2 3))",
+			cons(new CrispNumber(1),
+				 cons(cons(new Symbol("quote"),
+						   cons(cons(new CrispNumber(2),
+									 cons(new CrispNumber(3), List.EMPTY)),
+								List.EMPTY)),
+					  List.EMPTY)),
+			env
+		);
 	});
 
 	it('Syntax Quote/Unquote', function () {
@@ -146,21 +175,19 @@ describe('compiler', function () {
 		runIn("(def id (fn [x] x))", false, env);
 
 		compilesTo("`a", new Symbol("a"), env);
-		compilesTo("`(a b)", new List([new Symbol("a"), new Symbol("b")]), env);
-		compilesTo("`(a ~b)", new List([new Symbol("a"), 5]), env);
+		compilesTo("`(a b)", cons(new Symbol("a"), cons(new Symbol("b"), List.EMPTY)), env);
+		compilesTo("`(a ~b)", cons(new Symbol("a"), cons(5, List.EMPTY)), env);
 
 		compilesTo(
 			"`(a ~b c (d e) ~(id 'f))",
-			new List([
-				new Symbol("a"),
-				5,
-				new Symbol("c"),
-				new List([
-					new Symbol("d"),
-					new Symbol("e"),
-				]),
-				new Symbol("f"),
-			]),
+			cons(new Symbol("a"),
+				 cons(5,
+					  cons(new Symbol("c"),
+						   cons(cons(new Symbol("d"),
+									 cons(new Symbol("e"),
+										  List.EMPTY)),
+								cons(new Symbol("f"),
+									 List.EMPTY))))),
 			env
 		);
 	});
@@ -201,6 +228,7 @@ describe('compiler', function () {
 			]),
 			env
 		);
+
 	});
 
 	it('Simple Macros', function () {

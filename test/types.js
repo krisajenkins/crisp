@@ -16,7 +16,11 @@ var seq			= crisp.types.seq;
 var first		= crisp.types.first;
 var rest		= crisp.types.rest;
 var next		= crisp.types.next;
+var count		= crisp.types.count;
+var splice		= crisp.types.splice;
+var index_of	= crisp.types.index_of;
 var range		= crisp.core.range;
+var assertEq	= require('../build/runtime').assertEq;
 
 var equal		= crisp.core.equal;
 var format		= crisp.core.format;
@@ -81,48 +85,14 @@ describe('Equality', function () {
 		);
 	});
 
-	it('List manipulation', function () {
-		var a = new List([1, 2, 3]),
-			b = new List([4, 5, 6]);
-		assert.deepEqual(
-			a.cons(b),
-			new List([new List([4, 5, 6]), 1, 2, 3])
-		);
-		assert.deepEqual(
-			a.concat(b),
-			new List([1, 2, 3, 4, 5, 6])
-		);
-	});
-
-	it('Vector manipulation', function () {
-		var a = new Vector([1, 2, 3]),
-			b = new Vector([4, 5, 6]);
-		assert.deepEqual(
-			a.cons(b),
-			new Vector([new Vector([4, 5, 6]), 1, 2, 3])
-		);
-		assert.deepEqual(
-			a.concat(b),
-			new Vector([1, 2, 3, 4, 5, 6])
-		);
-
-		assert.deepEqual(a.drop(0), a);
-		assert.deepEqual(a.drop(1), new Vector([ 2, 3]));
-		assert.deepEqual(a.drop(10), new Vector([]));
-
-		assert.deepEqual(a.take(0), new Vector([]));
-		assert.deepEqual(a.take(1), new Vector([1]));
-		assert.deepEqual(a.take(10), a);
-	});
-
-	it('Vector searching', function () {
+	it('Seq searching', function () {
 		var a = new Vector([new CrispNumber(1), new Symbol("&"), new Keyword("test")]);
 
-		assert.equal(0, a.indexOf(new CrispNumber(1)));
-		assert.equal(1, a.indexOf(new Symbol("&")));
-		assert.equal(2, a.indexOf(new Keyword("test")));
+		assert.equal(0, index_of(new CrispNumber(1), a));
+		assert.equal(1, index_of(new Symbol("&"), a));
+		assert.equal(2, index_of(new Keyword("test"), a));
 
-		assert.equal(-1, a.indexOf("NOT THERE"));
+		assert.equal(-1, index_of("NOT THERE", a));
 	});
 
 	it('Seq misc.', function () {
@@ -142,12 +112,14 @@ describe('Equality', function () {
 		assert.deepEqual(1, first(aseq));
 		assert.deepEqual(new List([2, 3]), rest(aseq));
 		assert.deepEqual(new List([2, 3]), next(aseq));
+		assert.deepEqual(3, count(aseq));
 
 		assert.deepEqual(true, is_seq(List.EMPTY));
 		assert.deepEqual(undefined, seq(List.EMPTY));
 		assert.deepEqual(undefined, first(List.EMPTY));
 		assert.deepEqual(List.EMPTY, rest(List.EMPTY));
 		assert.deepEqual(undefined, next(List.EMPTY));
+		assert.deepEqual(0, count(List.EMPTY));
 	});
 
 	it('Vector Seq', function () {
@@ -158,12 +130,32 @@ describe('Equality', function () {
 		assert.deepEqual(1, first(aseq));
 		assert.deepEqual(new Vector([2, 3]), rest(aseq));
 		assert.deepEqual(new Vector([2, 3]), next(aseq));
+		assert.deepEqual(3, count(aseq));
 
 		assert.deepEqual(true, is_seq(Vector.EMPTY));
 		assert.deepEqual(undefined, seq(Vector.EMPTY));
 		assert.deepEqual(undefined, first(Vector.EMPTY));
 		assert.deepEqual(List.EMPTY, rest(Vector.EMPTY));
 		assert.deepEqual(undefined, next(Vector.EMPTY));
+		assert.deepEqual(0, count(Vector.EMPTY));
+	});
+
+	it('Array Seq', function () {
+		var aseq = [1, 2, 3];
+
+		assert.deepEqual(true, is_seq(aseq));
+		assert.deepEqual(aseq, seq(aseq));
+		assert.deepEqual(1, first(aseq));
+		assert.deepEqual([2, 3], rest(aseq));
+		assert.deepEqual([2, 3], next(aseq));
+		assert.deepEqual(3, count(aseq));
+
+		assert.deepEqual(true, is_seq(Array.EMPTY));
+		assert.deepEqual(undefined, seq(Array.EMPTY));
+		assert.deepEqual(undefined, first(Array.EMPTY));
+		assert.deepEqual(List.EMPTY, rest(Array.EMPTY));
+		assert.deepEqual(undefined, next(Array.EMPTY));
+		assert.deepEqual(0, count(Array.EMPTY));
 	});
 
 	it('Cons Seq', function () {
@@ -174,11 +166,13 @@ describe('Equality', function () {
 		assert.deepEqual(1, first(aseq));
 		assert.deepEqual(new List([2, 3]), rest(aseq));
 		assert.deepEqual(new List([2, 3]), next(aseq));
+		assert.deepEqual(3, count(aseq));
 
 		assert.deepEqual(undefined, first(new Cons(undefined, List.EMPTY)));
 		assert.deepEqual(List.EMPTY, rest(new Cons(undefined, List.EMPTY)));
 		assert.deepEqual(undefined, first(new Cons(undefined, undefined)));
 		assert.deepEqual(List.EMPTY, rest(new Cons(undefined, undefined)));
+		assert.deepEqual(1, count(new Cons(undefined, undefined)));
 	});
 
 	it('LazySeq, simple', function () {
@@ -190,5 +184,33 @@ describe('Equality', function () {
 		assert.deepEqual(5, first(aseq));
 		assert.deepEqual(6, first(rest(aseq)));
 		assert.deepEqual(6, first(next(aseq)));
+	});
+
+	it('Sequence equality', function () {
+		assertEq(
+			new List([1, 2]),
+			new Cons(1, new Cons(2, List.EMPTY))
+		);
+		assertEq(
+			new Vector([1, 2]),
+			new Cons(1, new Cons(2, List.EMPTY))
+		);
+	});
+
+	it('Splice', function () {
+		assertEq(
+			splice(
+				new List([1, 2, 3]),
+				new Cons(4, new Cons(5, List.EMPTY))
+			),
+			new List([1, 2, 3, 4, 5])
+		);
+		assertEq(
+			splice(
+				new Vector([1, 2, 3]),
+				new Cons(4, new Cons(5, List.EMPTY))
+			),
+			new List([1, 2, 3, 4, 5])
+		);
 	});
 });

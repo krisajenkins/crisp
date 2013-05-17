@@ -5,19 +5,26 @@ var assert		= require('assert');
 var fs			= require('fs');
 var crisp		= require('./crisp');
 
-var Symbol		= require('./types').Symbol;
-var Keyword		= require('./types').Keyword;
-var Vector		= require('./types').Vector;
-var List		= require('./types').List;
-var is_seq		= require('./types').is_seq;
-var head_is		= require('./types').head_is;
-var first		= require('./types').first;
-var second		= require('./types').second;
-var third		= require('./types').third;
-var fourth		= require('./types').fourth;
-var rest		= require('./types').rest;
+var Symbol		= crisp.types.Symbol;
+var Keyword		= crisp.types.Keyword;
+var Vector		= crisp.types.Vector;
+var List		= crisp.types.List;
+var Cons		= crisp.types.Cons;
+var Splice		= crisp.types.Splice;
+var is_seq		= crisp.types.is_seq;
+var head_is		= crisp.types.head_is;
+var first		= crisp.types.first;
+var second		= crisp.types.second;
+var third		= crisp.types.third;
+var fourth		= crisp.types.fourth;
+var rest		= crisp.types.rest;
+var count		= crisp.types.count;
+var seq			= crisp.types.seq;
+var index_of	= crisp.types.index_of;
+var map			= crisp.types.map;
 
 var equal		= require('./runtime').equal;
+var apply		= require('./runtime').apply;
 var read_string	= require('./reader').read_string;
 
 var meta = function (object) {
@@ -39,10 +46,10 @@ var macros = {};
 
 var macroexpand_1 = function (form, env, debug) {
 	var macro, result;
-	if (form instanceof List) {
+	if (is_seq(form)) {
 		macro = macros[first(form)];
 		if (macro !== undefined) {
-			return macro.apply(env, rest(form).items); // TODO, in the apply call, what should this be?
+			return apply(macro, rest(form));
 		}
 	}
 
@@ -191,7 +198,7 @@ compile.if = function (form, env) {
 
 compile.def = function (form, env) {
 	var name = second(form),
-		value = form.third(),
+		value = third(form),
 		compiled_name,
 		compiled_value,
 		evaled_value,
@@ -238,18 +245,21 @@ compile.def = function (form, env) {
 };
 
 compile.sequence = function (forms, env) {
-	return forms.map(function (form) { return compile(form, env); }).join(",");
+	return map(
+		function (form) { return compile(form, env); },
+		forms
+	).join(",");
 };
 
 compile.fn = function (form, env) {
 	var args = second(form),
-		body = form.drop(2),
+		body = rest(rest(form)),
 	    vararg_point,
         compiled_args,
         compiled_vararg,
         compiled_body;
 
-	vararg_point = args.indexOf(new Symbol("&"));
+	vararg_point = index_of(new Symbol("&"), args);
 	if (vararg_point >= 0) {
 		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
 		compiled_args = args.take(vararg_point).join(", ");
@@ -311,8 +321,23 @@ compile.quote_atom = function (form, env) {
 };
 
 compile.quote = function (form, env) {
+	if (form instanceof Splice) {
+		return crisp.core.format(
+			"new crisp.types.List([%s])",
+			map(function (f) { return compile.quote(f, env); }, form).join(", ")
+		);
+	}
+
 	if (form instanceof List) {
 		return crisp.core.format("new crisp.types.List([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+	}
+
+	if (form instanceof Cons) {
+		return crisp.core.format(
+			"new crisp.types.Cons(%s, %s)",
+			compile.quote(first(form)),
+			compile.quote(rest(form))
+		);
 	}
 
 	if (form instanceof Vector) {
@@ -325,7 +350,11 @@ compile.quote = function (form, env) {
 compile.syntax_quote = function (form, env) {
 	var join_format;
 
-	if (form instanceof List) {
+	if (
+		form instanceof List
+		||
+		form instanceof Cons
+	) {
 		if (head_is(form, "unquote")) {
 			assert.equal(2, form.count(), "unquote takes exactly one argument.");
 			return compile(second(form), env);
@@ -338,27 +367,32 @@ compile.syntax_quote = function (form, env) {
 	}
 
 	if (is_seq(form)) {
-		if (form.count() === 0) {
+		if (count(form) === 0) {
 			if (form instanceof List) {
-				return "new crisp.types.List([])";
+				return "crisp.types.List.EMPTY";
+			}
+			if (form instanceof Cons) {
+				return "crisp.types.List.EMPTY";
 			}
 			if (form instanceof Vector) {
-				return "new crisp.types.Vector([])";
+				return "crisp.types.Vector.EMPTY";
 			}
 
 			throw new Error("syntax-quoting an unknown sequence type: " + typeof form);
 		} else {
 			if (head_is(first(form), "unquote-splicing")) {
-				join_format = "%s.prepend(%s)";
+				return crisp.core.format(
+					"crisp.types.splice(%s, %s)",
+					compile.syntax_quote(first(form), env),
+					compile.syntax_quote(rest(form), env)
+				);
 			} else {
-				join_format = "%s.cons(%s)";
+				return crisp.core.format(
+					"crisp.types.cons(%s, %s)",
+					compile.syntax_quote(first(form), env),
+					compile.syntax_quote(rest(form), env)
+				);
 			}
-
-			return crisp.core.format(
-				join_format,
-				compile.syntax_quote(rest(form), env),
-				compile.syntax_quote(first(form), env)
-			);
 		}
 	}
 
@@ -380,7 +414,7 @@ compile.macroexpand_1 = function (form, env) {
 	arg = second(form);
 
 	assert.equal(true, head_is(arg, "quote"), "Argument to macroexpand-1 must be quoted.");
-	expanded = macroexpand_1(arg.second(), env);
+	expanded = macroexpand_1(second(arg), env);
 
 	return compile(new List([new Symbol("quote"), expanded]), env);
 };

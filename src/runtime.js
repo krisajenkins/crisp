@@ -4,15 +4,10 @@
 
 var assert = require("assert");
 var format = require("util").format;
+var inspect = require("util").inspect;
 var crisp = {
 	types: require('./types')
 };
-
-var is_atom = function (form) {
-	return !((form instanceof Array) || (form instanceof crisp.types.List) || (form instanceof crisp.types.Vector));
-};
-
-exports.is_atom = is_atom;
 
 var is_self_evaluating = function (form) {
 	return ((typeof form === "boolean") || (typeof form === "number") || (typeof form === "string"));
@@ -26,16 +21,55 @@ var identity = function (x) {
 
 exports.identity = identity;
 
+var seq_equal = function (x, y) {
+	if (crisp.types.seq(x) === undefined) {
+		return crisp.types.seq(y) === undefined;
+	}
+
+	if (crisp.types.seq(y) === undefined) {
+		return crisp.types.seq(x) === undefined;
+	}
+
+	return equal(crisp.types.first(x), crisp.types.first(y))
+		&&
+		equal(crisp.types.rest(x), crisp.types.rest(y));
+};
+
 var equal = function (x, y) {
-	return (x === undefined) ? (y === undefined)
-		: (y === undefined) ? false
-		: x.equal ? x.equal(y)
-		: y.equal ? y.equal(x)
-		: (typeof x === typeof y) ? (x === y)
-		: (function () { throw "Cannot determine equality for objects " + x + " and " + y; }());
+	if (x === undefined) {
+		return y === undefined;
+	}
+
+	if (y === undefined) {
+		return x === undefined;
+	}
+
+	if (crisp.types.is_seq(x) && crisp.types.is_seq(y)) {
+		return seq_equal(x, y);
+	}
+
+	return require('deep-equal')(x, y);
 };
 
 exports.equal = equal;
+
+var assertEq = function (result, expected, message) {
+	if (message === undefined) {
+		message = "Not equal:";
+	}
+
+	assert.equal(
+		true,
+		equal(result, expected),
+		format(
+			"%s %s %s",
+			message,
+			inspect(result, {depth: null}),
+			inspect(expected, {depth: null})
+		)
+	);
+};
+exports.assertEq = assertEq;
 
 var Environment = function () {
 	return;
@@ -70,5 +104,19 @@ Environment.prototype.extend_by = function (callee, args, rest, values) {
 };
 
 exports.Environment = Environment;
+
+var apply = function (f, aseq) {
+	var args = [],
+		things = crisp.types.seq(aseq),
+		result;
+
+	while (things !== undefined) {
+		args.push(crisp.types.first(things));
+		things = crisp.types.seq(crisp.types.rest(things));
+	}
+
+	return f.apply(undefined, args);
+};
+exports.apply = apply;
 
 // END

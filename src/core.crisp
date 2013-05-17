@@ -1,6 +1,11 @@
-(def Cons (.-Cons (require "./types")))
 (def format (.-format (require "util")))
+(def inspect (.-inspect (require "util")))
 (def equal (require "deep-equal"))
+(def first crisp.types.first)
+(def rest crisp.types.rest)
+(def count crisp.types.count)
+(def LazySeq crisp.types.LazySeq)
+(def Cons crisp.types.Cons)
 
 (def defmacro
   (macro [name args body]
@@ -16,17 +21,6 @@
   `(def ~name
      (fn ~args ~body)))
 
-;; TODO This could be made more efficient. Take every even-numbered
-;; binding as the arg, every odd-numbered binding as the value.
-(defmacro let
-  [bindings & body]
-  (if (lt (.count bindings) 1)
-    `((fn [] ~@body))
-    `((fn [~(.first bindings)]
-        (let ~(.drop bindings 2)
-          ~@body))
-      ~(.second bindings))))
-
 (defn number?
   [x]
   (= (typeof x) "number"))
@@ -38,12 +32,7 @@
 ;; TODO Badly defined. Doesn't use the seq abstraction.
 (defn empty?
   [x]
-  (zero? (.count x)))
-
-(def atom?
-  (fn [form]
-    (not (or (instanceof form Array)
-             (instanceof form List)))))
+  (zero? (count x)))
 
 (def self-evaluating?
   (fn [form]
@@ -59,9 +48,57 @@
 
 (defmacro lazy-seq
   [body]
-  `(crisp.types.LazySeq. (fn [] ~body)))
+  `(LazySeq. (fn [] ~body)))
+
+(defn map
+  [f coll]
+  (lazy-seq
+   (cons (f (first coll))
+         (map f (rest coll)))))
+
+(defn join
+  [coll string]
+  (+ (first coll)
+     string
+     (join (rest coll) string)))
 
 (defn range
   [x]
   (lazy-seq
    (cons x (range (inc x)))))
+
+(defn drop
+  [n aseq]
+  (if (= 0 n)
+    aseq
+    (drop (dec n)
+          (rest aseq))))
+
+;; (defn pr-str
+;;   [x]
+;;   (cond
+;;    (number? x) (format "%d" x)
+;;    :else (format "%s" str)))
+
+;; (defn println
+;;   [& xs]
+;;   (apply console.log (map pr-str xs)))
+
+;; (defn println
+;;   [x]
+;;   (console.log
+;;    (pr-str x)
+;;    ))
+
+;; (println (first (range 15)))
+
+;; TODO This could be made more efficient. Take every even-numbered
+;; binding as the arg, every odd-numbered binding as the value.
+(defmacro let
+  [bindings & body]
+  (if (< (count bindings) 1)
+    `((fn [] ~@body))
+    `((fn [~(first bindings)]
+        (let ~(rest (rest bindings))
+          ~@body))
+      ~(second bindings))))
