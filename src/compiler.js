@@ -63,6 +63,10 @@ primitives[new Symbol("+")]		= function (args, env) {return crisp.core.format("(
 primitives[new Symbol("-")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" - ")); };
 primitives[new Symbol("*")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" * ")); };
 primitives[new Symbol("/")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" / ")); };
+primitives[new Symbol("<")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" < ")); };
+primitives[new Symbol(">")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" > ")); };
+primitives[new Symbol("<=")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" <= ")); };
+primitives[new Symbol(">=")]		= function (args, env) {return crisp.core.format("(%s)", args.join(" >= ")); };
 primitives[new Symbol("or")]	= function (args, env) {return crisp.core.format("(%s)", args.join(" || ")); };
 primitives[new Symbol("and")]	= function (args, env) {return crisp.core.format("(%s)", args.join(" && ")); };
 primitives[new Symbol("=")]		= function (args, env) {return crisp.core.format("crisp.core.equal(%s)", args.join(", ")); };

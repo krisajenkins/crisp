@@ -23,7 +23,7 @@ describe('reader', function () {
 		assert.deepEqual(read_string("somevar").result, new Symbol("somevar"));
 		assert.deepEqual(read_string("+").result, new Symbol("+"));
 		assert.deepEqual(read_string("list?").result, new Symbol("list?"));
-		assert.deepEqual(read_string("tom.dick_&-harry").result, new Symbol("tom.dick_&-harry"));
+		assert.deepEqual(read_string("<tom.dick_&-harry>").result, new Symbol("<tom.dick_&-harry>"));
 	});
 	it('Boolean', function () {
 		assert.deepEqual(read_string("true").result, new CrispBoolean("true"));
