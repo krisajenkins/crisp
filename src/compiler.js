@@ -118,6 +118,7 @@ var compile = function compile(form, env) {
 	if (form instanceof crisp.types.CrispNumber) { return form.toString(); }
 	if (form instanceof crisp.types.CrispBoolean) { return form.toString(); }
 	if (form instanceof crisp.types.CrispString) { return form.toString(); }
+	if (form instanceof crisp.types.Keyword) { return form.toString(); }
 
 	if (form instanceof Symbol) {
 		return compile.symbol(form, env);
@@ -125,6 +126,10 @@ var compile = function compile(form, env) {
 
 	if (form instanceof Vector) {
 		return compile.vector(form, env);
+	}
+
+	if (seq(form) === undefined) {
+		return "undefined";
 	}
 
 	if (head_is(form, "if")) {

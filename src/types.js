@@ -341,9 +341,10 @@ var seq = function (aseq) {
 		true,
 		is_seq(aseq),
 		format(
-			"Collection (%s, %s) does not implement seq.",
+			"Collection (%s, %s/%s) does not implement seq.",
 			inspect(aseq, {depth: null}),
-			typeof aseq
+			typeof aseq,
+			aseq.type
 		)
 	);
 
