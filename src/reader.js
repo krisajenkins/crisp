@@ -145,7 +145,7 @@ function read_string(string) {
 	// Boolean.
 	match = match_boolean(string);
 	if (match) {
-		match.result = new crisp.types.CrispBoolean(match.result);
+		match.result = (match.result === 'true');
 		return match;
 	}
 

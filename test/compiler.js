@@ -10,7 +10,6 @@ var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
 var CrispString		= crisp.types.CrispString;
 var CrispNumber		= crisp.types.CrispNumber;
-var CrispBoolean	= crisp.types.CrispBoolean;
 var Keyword			= crisp.types.Keyword;
 var Vector			= crisp.types.Vector;
 var List			= crisp.types.List;
@@ -85,7 +84,7 @@ describe('compiler', function () {
 
 	it('Boolean', function () {
 		compilesTo("true", true, env);
-		compilesTo("'true", new CrispBoolean(true), env);
+		compilesTo("'true", true, env);
 	});
 
 	it('If', function () {
@@ -240,7 +239,7 @@ describe('compiler', function () {
 			"(macroexpand-1 '(unless false 5))",
 			new List([
 				new Symbol("if"),
-				new CrispBoolean(false),
+				false,
 				new Symbol("nil"),
 				new CrispNumber(5),
 			]),

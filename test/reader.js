@@ -6,7 +6,6 @@ var read_string = require('../build/reader').read_string;
 var Symbol = require('../build/types').Symbol;
 var CrispString = require('../build/types').CrispString;
 var CrispNumber = require('../build/types').CrispNumber;
-var CrispBoolean = require('../build/types').CrispBoolean;
 var CrispNumber = require('../build/types').CrispNumber;
 var Keyword = require('../build/types').Keyword;
 var Vector = require('../build/types').Vector;
@@ -26,8 +25,8 @@ describe('reader', function () {
 		assert.deepEqual(read_string("<tom.dick_&-harry>").result, new Symbol("<tom.dick_&-harry>"));
 	});
 	it('Boolean', function () {
-		assert.deepEqual(read_string("true").result, new CrispBoolean("true"));
-		assert.deepEqual(read_string("false").result, new CrispBoolean("false"));
+		assert.deepEqual(read_string("true").result, true);
+		assert.deepEqual(read_string("false").result, false);
 	});
 	it('Strings', function () {
 		assert.deepEqual(read_string('"test"').result, new CrispString("test"));
