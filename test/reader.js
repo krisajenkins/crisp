@@ -123,4 +123,14 @@ describe('reader', function () {
 			])
 		);
 	});
+
+	it('Regexps', function () {
+		assert.deepEqual(
+			read_string('#"[aeiou]"').result,
+			new List([
+				new Symbol("RegExp."),
+				new CrispString("[aeiou]"),
+			])
+		);
+	});
 });

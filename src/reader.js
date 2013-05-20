@@ -30,6 +30,7 @@ var match_close_brace		= make_parser(/^\}/, 'CLOSE_BRACE');
 var match_number			= make_parser(/^-?\d+(\.\d+)?/, 'NUMBER');
 var match_string			= make_parser(/^"([^"]*)"/m, 'STRING');
 var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
+var match_regexp			= make_parser(/^#"([^"]*)"/m, 'REGEXP');
 var match_boolean			= make_parser(/^(true|false)\b/, 'BOOLEAN');
 var match_symbol			= make_parser(/^[\w\._\/\-\+!=<>?&\*]+/, 'SYMBOL');
 var match_whitespace		= make_parser(/^\s+/, 'WHITESPACE');
@@ -145,6 +146,16 @@ function read_string(string) {
 	match = match_boolean(string);
 	if (match) {
 		match.result = new crisp.types.CrispBoolean(match.result);
+		return match;
+	}
+
+	// Regexps.
+	match = match_regexp(string);
+	if (match) {
+		match.result = new crisp.types.List([
+			new crisp.types.Symbol("RegExp."),
+			new crisp.types.CrispString(match.groups[0])
+		]);
 		return match;
 	}
 
