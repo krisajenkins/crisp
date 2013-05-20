@@ -154,7 +154,7 @@ function read_string(string) {
 	if (match) {
 		match.result = new crisp.types.List([
 			new crisp.types.Symbol("RegExp."),
-			new crisp.types.CrispString(match.groups[0])
+			match.groups[0]
 		]);
 		return match;
 	}
@@ -162,7 +162,7 @@ function read_string(string) {
 	// Strings.
 	match = match_string(string);
 	if (match) {
-		match.result = new crisp.types.CrispString(match.groups[0]);
+		match.result = match.groups[0];
 		return match;
 	}
 

@@ -4,7 +4,6 @@
 var assert = require('assert');
 var read_string = require('../build/reader').read_string;
 var Symbol = require('../build/types').Symbol;
-var CrispString = require('../build/types').CrispString;
 var Keyword = require('../build/types').Keyword;
 var Vector = require('../build/types').Vector;
 var List = require('../build/types').List;
@@ -27,7 +26,7 @@ describe('reader', function () {
 		assert.deepEqual(read_string("false").result, false);
 	});
 	it('Strings', function () {
-		assert.deepEqual(read_string('"test"').result, new CrispString("test"));
+		assert.deepEqual(read_string('"test"').result, "test");
 	});
 	it('Keywords', function () {
 		assert.deepEqual(read_string(":a").result, new Keyword("a"));
@@ -126,7 +125,7 @@ describe('reader', function () {
 			read_string('#"[aeiou]"').result,
 			new List([
 				new Symbol("RegExp."),
-				new CrispString("[aeiou]"),
+				"[aeiou]",
 			])
 		);
 	});

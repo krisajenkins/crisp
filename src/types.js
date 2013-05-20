@@ -7,22 +7,6 @@ var equal = require("deep-equal");
 var format = require("util").format;
 var inspect = require("util").inspect;
 
-var CrispString = function (value) {
-	this.type = "CrispString";
-	this.value = value;
-	return this;
-};
-
-CrispString.prototype.equal = function (other) {
-	return ((this.type === other.type) && (this.value === other.value));
-};
-
-CrispString.prototype.toString = function () {
-	return format("%j", this.value);
-};
-
-exports.CrispString = CrispString;
-
 var Symbol = function (name) {
 	this.type = "Symbol";
 	this.name = name;

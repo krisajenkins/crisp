@@ -114,10 +114,9 @@ var compile = function compile(form, env) {
 
 	if (form === undefined) { return "undefined"; }
 
-	if (typeof form === "string") { return form; }
+	if (typeof form === "string") { return crisp.core.format("%j", form); }
 	if (typeof form === "boolean") { return form; }
 	if (typeof form === "number") { return form; }
-	if (form instanceof crisp.types.CrispString) { return form.toString(); }
 	if (form instanceof crisp.types.Keyword) { return form.toString(); }
 
 	if (form instanceof Symbol) {
@@ -298,12 +297,8 @@ compile.quote_atom = function (form, env) {
 		return crisp.core.format("%s", form);
 	}
 
-	if (
-		typeof form === 'string'
-		||
-		form instanceof crisp.types.CrispString
-	) {
-		return crisp.core.format("new crisp.types.CrispString(%s)", form);
+	if (typeof form === 'string') {
+		return crisp.core.format("%j", form);
 	}
 
 	if (form instanceof Keyword) {

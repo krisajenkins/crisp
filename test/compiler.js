@@ -8,7 +8,6 @@ var inspect			= require('util').inspect;
 var format			= require('util').format;
 var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
-var CrispString		= crisp.types.CrispString;
 var Keyword			= crisp.types.Keyword;
 var Vector			= crisp.types.Vector;
 var List			= crisp.types.List;
@@ -73,7 +72,7 @@ describe('compiler', function () {
 	it('String', function () {
 		compilesTo('""', "", env);
 		compilesTo('"Something"', "Something", env);
-		compilesTo('\'"Something"', new CrispString("Something"), env);
+		compilesTo('\'"Something"', "Something", env);
 	});
 
 	it('nil', function () {
@@ -129,21 +128,21 @@ describe('compiler', function () {
 
 	it('Quote', function () {
 		compilesTo("'1", 1, env);
-		compilesTo("'\"thing\"", new CrispString("thing"), env);
-		compilesTo("'(1 2 \"test\")", new List([1, 2, new CrispString("test")]), env);
-		compilesTo("'[1 2 \"test\"]", new Vector([1, 2, new CrispString("test")]), env);
+		compilesTo("'\"thing\"", "thing", env);
+		compilesTo("'(1 2 \"test\")", new List([1, 2, "test"]), env);
+		compilesTo("'[1 2 \"test\"]", new Vector([1, 2, "test"]), env);
 		compilesTo("'(1 '(2 3))", new List([1, new List([new Symbol("quote"), new List([2, 3])])]), env);
 	});
 
 	it('Simple Syntax Quote', function () {
 		compilesTo("`1", 1, env);
-		compilesTo("`\"thing\"", new CrispString("thing"), env);
+		compilesTo("`\"thing\"", "thing", env);
 		compilesTo(
 			'`(1 2 "test")',
 			new List([
 				1,
 				2,
-				new CrispString("test")
+				"test"
 			]),
 			env
 		);
@@ -151,7 +150,7 @@ describe('compiler', function () {
 			'`[1 2 "test"]',
 			cons(1,
 				 cons(2,
-					  cons(new CrispString("test"),
+					  cons("test",
 						   Vector.EMPTY))),
 			env
 		);

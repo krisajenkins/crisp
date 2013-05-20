@@ -6,7 +6,6 @@ var assert		= require('assert');
 var crisp		= require('../build/crisp');
 var Symbol		= crisp.types.Symbol;
 var Cons		= crisp.types.Cons;
-var CrispString = crisp.types.CrispString;
 var Keyword		= crisp.types.Keyword;
 var Vector		= crisp.types.Vector;
 var List		= crisp.types.List;
@@ -30,12 +29,6 @@ describe('Equality', function () {
 		assert.equal(false, equal(new Keyword("a"), new Keyword("b")));
 		assert.equal(false, equal(new Keyword("a"), undefined));
 		assert.equal(false, equal(undefined, new Keyword("b")));
-	});
-	it('CrispString Equality', function () {
-		assert.equal(true, equal(new CrispString("a"), new CrispString("a")));
-		assert.equal(false, equal(new CrispString("a"), new CrispString("b")));
-		assert.equal(false, equal(new CrispString("a"), undefined));
-		assert.equal(false, equal(undefined, new CrispString("b")));
 	});
 	it('Symbol Equality', function () {
 		assert.equal(true, equal(new Symbol("a"), new Symbol("a")));
