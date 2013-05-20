@@ -7,7 +7,6 @@ var crisp		= require('../build/crisp');
 var Symbol		= crisp.types.Symbol;
 var Cons		= crisp.types.Cons;
 var CrispString = crisp.types.CrispString;
-var CrispNumber = crisp.types.CrispNumber;
 var Keyword		= crisp.types.Keyword;
 var Vector		= crisp.types.Vector;
 var List		= crisp.types.List;
@@ -86,9 +85,9 @@ describe('Equality', function () {
 	});
 
 	it('Seq searching', function () {
-		var a = new Vector([new CrispNumber(1), new Symbol("&"), new Keyword("test")]);
+		var a = new Vector([1, new Symbol("&"), new Keyword("test")]);
 
-		assert.equal(0, index_of(new CrispNumber(1), a));
+		assert.equal(0, index_of(1, a));
 		assert.equal(1, index_of(new Symbol("&"), a));
 		assert.equal(2, index_of(new Keyword("test"), a));
 

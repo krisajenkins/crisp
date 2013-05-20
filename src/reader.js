@@ -138,7 +138,7 @@ function read_string(string) {
 	// Numbers.
 	match = match_number(string);
 	if (match) {
-		match.result = new crisp.types.CrispNumber(parseFloat(match.result));
+		match.result = parseFloat(match.result);
 		return match;
 	}
 

@@ -9,7 +9,6 @@ var format			= require('util').format;
 var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
 var CrispString		= crisp.types.CrispString;
-var CrispNumber		= crisp.types.CrispNumber;
 var Keyword			= crisp.types.Keyword;
 var Vector			= crisp.types.Vector;
 var List			= crisp.types.List;
@@ -68,7 +67,7 @@ describe('compiler', function () {
 		compilesTo("123", 123, env);
 		compilesTo("0.34", 0.34, env);
 		compilesTo("-0.34", -0.34, env);
-		compilesTo("'-0.34", new CrispNumber(-0.34), env);
+		compilesTo("'-0.34", -0.34, env);
 	});
 
 	it('String', function () {
@@ -129,29 +128,29 @@ describe('compiler', function () {
 	});
 
 	it('Quote', function () {
-		compilesTo("'1", new CrispNumber(1), env);
+		compilesTo("'1", 1, env);
 		compilesTo("'\"thing\"", new CrispString("thing"), env);
-		compilesTo("'(1 2 \"test\")", new List([new CrispNumber(1), new CrispNumber(2), new CrispString("test")]), env);
-		compilesTo("'[1 2 \"test\"]", new Vector([new CrispNumber(1), new CrispNumber(2), new CrispString("test")]), env);
-		compilesTo("'(1 '(2 3))", new List([new CrispNumber(1), new List([new Symbol("quote"), new List([new CrispNumber(2), new CrispNumber(3)])])]), env);
+		compilesTo("'(1 2 \"test\")", new List([1, 2, new CrispString("test")]), env);
+		compilesTo("'[1 2 \"test\"]", new Vector([1, 2, new CrispString("test")]), env);
+		compilesTo("'(1 '(2 3))", new List([1, new List([new Symbol("quote"), new List([2, 3])])]), env);
 	});
 
 	it('Simple Syntax Quote', function () {
-		compilesTo("`1", new CrispNumber(1), env);
+		compilesTo("`1", 1, env);
 		compilesTo("`\"thing\"", new CrispString("thing"), env);
 		compilesTo(
 			'`(1 2 "test")',
 			new List([
-				new CrispNumber(1),
-				new CrispNumber(2),
+				1,
+				2,
 				new CrispString("test")
 			]),
 			env
 		);
 		compilesTo(
 			'`[1 2 "test"]',
-			cons(new CrispNumber(1),
-				 cons(new CrispNumber(2),
+			cons(1,
+				 cons(2,
 					  cons(new CrispString("test"),
 						   Vector.EMPTY))),
 			env
@@ -159,10 +158,10 @@ describe('compiler', function () {
 
 		compilesTo(
 			"`(1 '(2 3))",
-			cons(new CrispNumber(1),
+			cons(1,
 				 cons(cons(new Symbol("quote"),
-						   cons(cons(new CrispNumber(2),
-									 cons(new CrispNumber(3), List.EMPTY)),
+						   cons(cons(2,
+									 cons(3, List.EMPTY)),
 								List.EMPTY)),
 					  List.EMPTY)),
 			env
@@ -198,9 +197,9 @@ describe('compiler', function () {
 			"`(a ~@b c)",
 			new List([
 				new Symbol("a"),
-				new CrispNumber(1),
-				new CrispNumber(2),
-				new CrispNumber(3),
+				1,
+				2,
+				3,
 				new Symbol("c"),
 			]),
 			env
@@ -210,9 +209,9 @@ describe('compiler', function () {
 			"`[a ~@b c]",
 			new Vector([
 				new Symbol("a"),
-				new CrispNumber(1),
-				new CrispNumber(2),
-				new CrispNumber(3),
+				1,
+				2,
+				3,
 				new Symbol("c"),
 			]),
 			env
@@ -221,9 +220,9 @@ describe('compiler', function () {
 		compilesTo(
 			"`~@b",
 			new List([
-				new CrispNumber(1),
-				new CrispNumber(2),
-				new CrispNumber(3),
+				1,
+				2,
+				3,
 			]),
 			env
 		);
@@ -241,7 +240,7 @@ describe('compiler', function () {
 				new Symbol("if"),
 				false,
 				new Symbol("nil"),
-				new CrispNumber(5),
+				5,
 			]),
 			env
 		);

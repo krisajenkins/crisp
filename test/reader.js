@@ -5,18 +5,16 @@ var assert = require('assert');
 var read_string = require('../build/reader').read_string;
 var Symbol = require('../build/types').Symbol;
 var CrispString = require('../build/types').CrispString;
-var CrispNumber = require('../build/types').CrispNumber;
-var CrispNumber = require('../build/types').CrispNumber;
 var Keyword = require('../build/types').Keyword;
 var Vector = require('../build/types').Vector;
 var List = require('../build/types').List;
 
 describe('reader', function () {
 	it('Numbers', function () {
-		assert.deepEqual(read_string("2").result, new CrispNumber(2));
-		assert.deepEqual(read_string("2").result, new CrispNumber(2));
-		assert.deepEqual(read_string("-9").result, new CrispNumber(-9));
-		assert.deepEqual(read_string("51.13").result, new CrispNumber(51.13));
+		assert.deepEqual(read_string("2").result, 2);
+		assert.deepEqual(read_string("2").result, 2);
+		assert.deepEqual(read_string("-9").result, -9);
+		assert.deepEqual(read_string("51.13").result, 51.13);
 	});
 	it('Symbols', function () {
 		assert.deepEqual(read_string("somevar").result, new Symbol("somevar"));
@@ -37,25 +35,25 @@ describe('reader', function () {
 	});
 	it('Lists', function () {
 		assert.deepEqual(read_string("()").result, new List([]));
-		assert.deepEqual(read_string("(1)").result, new List([new CrispNumber(1)]));
+		assert.deepEqual(read_string("(1)").result, new List([1]));
 		assert.deepEqual(read_string("()").result, new List([]));
 		assert.deepEqual(
 			read_string("(1 a 2 b)").result,
-			new List([new CrispNumber(1), new Symbol("a"), new CrispNumber(2), new Symbol("b")])
+			new List([1, new Symbol("a"), 2, new Symbol("b")])
 		);
 	});
 	it('Vectors', function () {
 		assert.deepEqual(read_string("[]").result, new Vector([]));
 		assert.deepEqual(read_string("[ ]").result, new Vector([]));
-		assert.deepEqual(read_string("[1]").result, new Vector([new CrispNumber(1)]));
+		assert.deepEqual(read_string("[1]").result, new Vector([1]));
 		assert.deepEqual(
 			read_string("[1 a 2 b]").result,
-			new Vector([new CrispNumber(1), new Symbol("a"), new CrispNumber(2), new Symbol("b")])
+			new Vector([1, new Symbol("a"), 2, new Symbol("b")])
 		);
 	});
 	it('Maps', function () {
 		assert.deepEqual(read_string("{}").result, [new Symbol("crisp.types.HashMap.")]);
-		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("crisp.types.HashMap."), new Symbol("a"), new CrispNumber(1), new Symbol("b"), new CrispNumber(2)]);
+		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("crisp.types.HashMap."), new Symbol("a"), 1, new Symbol("b"), 2]);
 	});
 	it('Quotes', function () {
 		assert.deepEqual(
@@ -67,7 +65,7 @@ describe('reader', function () {
 		);
 		assert.deepEqual(
 			read_string("'(1 2 3)").result,
-			new List([new Symbol("quote"), new List([new CrispNumber(1), new CrispNumber(2), new CrispNumber(3)])])
+			new List([new Symbol("quote"), new List([1, 2, 3])])
 		);
 	});
 	it('Macros', function () {
@@ -107,7 +105,7 @@ describe('reader', function () {
 			new List([
 				new Symbol("def"),
 				new Symbol("a"),
-				new CrispNumber(5),
+				5,
 			])
 		);
 		assert.equal(two.type, "WHITESPACE");
@@ -118,7 +116,7 @@ describe('reader', function () {
 			new List([
 				new Symbol("def"),
 				new Symbol("b"),
-				new CrispNumber(6),
+				6,
 			])
 		);
 	});

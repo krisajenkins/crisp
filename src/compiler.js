@@ -116,7 +116,7 @@ var compile = function compile(form, env) {
 
 	if (typeof form === "string") { return form; }
 	if (typeof form === "boolean") { return form; }
-	if (form instanceof crisp.types.CrispNumber) { return form.toString(); }
+	if (typeof form === "number") { return form; }
 	if (form instanceof crisp.types.CrispString) { return form.toString(); }
 	if (form instanceof crisp.types.Keyword) { return form.toString(); }
 
@@ -290,12 +290,8 @@ compile.fn = function (form, env) {
 };
 
 compile.quote_atom = function (form, env) {
-	if (
-		typeof form === 'number'
-		||
-		form instanceof crisp.types.CrispNumber
-	) {
-		return crisp.core.format("new crisp.types.CrispNumber(%s)", form);
+	if (typeof form === 'number') {
+		return crisp.core.format("%d", form);
 	}
 
 	if (typeof form === 'boolean') {
