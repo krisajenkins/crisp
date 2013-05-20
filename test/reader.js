@@ -5,7 +5,6 @@ var assert = require('assert');
 var read_string = require('../build/reader').read_string;
 var Symbol = require('../build/types').Symbol;
 var Keyword = require('../build/types').Keyword;
-var Vector = require('../build/types').Vector;
 var List = require('../build/types').List;
 
 describe('reader', function () {
@@ -41,13 +40,13 @@ describe('reader', function () {
 			new List([1, new Symbol("a"), 2, new Symbol("b")])
 		);
 	});
-	it('Vectors', function () {
-		assert.deepEqual(read_string("[]").result, new Vector([]));
-		assert.deepEqual(read_string("[ ]").result, new Vector([]));
-		assert.deepEqual(read_string("[1]").result, new Vector([1]));
+	it('Arrays', function () {
+		assert.deepEqual(read_string("[]").result, []);
+		assert.deepEqual(read_string("[ ]").result, []);
+		assert.deepEqual(read_string("[1]").result, [1]);
 		assert.deepEqual(
 			read_string("[1 a 2 b]").result,
-			new Vector([1, new Symbol("a"), 2, new Symbol("b")])
+			[1, new Symbol("a"), 2, new Symbol("b")]
 		);
 	});
 	it('Maps', function () {

@@ -101,69 +101,6 @@ List.prototype.toString = function () {
 
 exports.List = List;
 
-var Vector = function (items) {
-	this.type = "Vector";
-	this.items = items;
-	return this;
-};
-
-Vector.EMPTY = new Vector([]);
-Vector.prototype.seq = function () {
-	if (this.items.length > 0) {
-		return this;
-	}
-};
-Vector.prototype.first = function () {
-	if (this.items.length > 0) {
-		return this.items[0];
-	}
-
-	return undefined;
-};
-Vector.prototype.rest = function () {
-	if (this.items.length > 0) {
-		return new Vector(this.items.slice(1));
-	}
-
-	return Vector.EMPTY;
-};
-Vector.prototype.slice = function () {
-	this.items.slice(arguments);
-};
-Vector.prototype.count = function () {
-	return this.items.length;
-};
-Vector.prototype.nth = function (n) {
-	return this.items[n];
-};
-Vector.prototype.join = function (separator) {
-	return this.items.join(separator);
-};
-Vector.prototype.map = function (f) {
-	return new Vector(this.items.map(f));
-};
-Vector.prototype.take = function (n) {
-	return new Vector(this.items.slice(0, n));
-};
-Vector.prototype.drop = function (n) {
-	return new Vector(this.items.slice(n));
-};
-Vector.prototype.cons = function (head) {
-	return new Cons(head, this);
-};
-Vector.prototype.first = function () {
-	if (this.items.length > 0) {
-		return this.items[0];
-	}
-};
-Vector.prototype.equal = function (other) {
-	return ((this.type === other.type) && equal(this.items,other.items));
-};
-Vector.prototype.toString = function () {
-	return format("[%s]", this.items.join(", "));
-};
-exports.Vector = Vector;
-
 Array.prototype.count = function () {
 	return this.length;
 };
@@ -184,7 +121,13 @@ Array.prototype.rest = function () {
 		return this.slice(1);
 	}
 
-	return Vector.EMPTY;
+	return Array.EMPTY;
+};
+Array.prototype.nth = function (n) {
+	return this[n];
+};
+Array.prototype.take = function (n) {
+	return this.slice(0, n);
 };
 Array.EMPTY = [];
 

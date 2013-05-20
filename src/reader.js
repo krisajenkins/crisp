@@ -119,11 +119,10 @@ function read_string(string) {
 		return match;
 	}
 
-	// Vectors.
+	// Arrays.
 	match = match_open_bracket(string);
 	if (match) {
 		match = read_until(match_close_bracket, match.remainder);
-		match.result = new crisp.types.Vector(match.result);
 		return match;
 	}
 

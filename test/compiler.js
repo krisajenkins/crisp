@@ -9,7 +9,6 @@ var format			= require('util').format;
 var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
 var Keyword			= crisp.types.Keyword;
-var Vector			= crisp.types.Vector;
 var List			= crisp.types.List;
 var Cons			= crisp.types.Cons;
 var cons			= crisp.types.cons;
@@ -130,7 +129,7 @@ describe('compiler', function () {
 		compilesTo("'1", 1, env);
 		compilesTo("'\"thing\"", "thing", env);
 		compilesTo("'(1 2 \"test\")", new List([1, 2, "test"]), env);
-		compilesTo("'[1 2 \"test\"]", new Vector([1, 2, "test"]), env);
+		compilesTo("'[1 2 \"test\"]", [1, 2, "test"], env);
 		compilesTo("'(1 '(2 3))", new List([1, new List([new Symbol("quote"), new List([2, 3])])]), env);
 	});
 
@@ -151,7 +150,7 @@ describe('compiler', function () {
 			cons(1,
 				 cons(2,
 					  cons("test",
-						   Vector.EMPTY))),
+						   Array.EMPTY))),
 			env
 		);
 
@@ -206,13 +205,13 @@ describe('compiler', function () {
 
 		compilesTo(
 			"`[a ~@b c]",
-			new Vector([
+			[
 				new Symbol("a"),
 				1,
 				2,
 				3,
 				new Symbol("c"),
-			]),
+			],
 			env
 		);
 

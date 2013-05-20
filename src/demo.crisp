@@ -1,0 +1,71 @@
+(def inc crisp.core.inc)
+(def dec crisp.core.dec)
+(def format crisp.core.format)
+(def inspect crisp.core.inspect)
+(def cons crisp.core.cons)
+(def first crisp.types.first)
+(def second crisp.types.second)
+(def rest crisp.types.rest)
+(def map crisp.core.map)
+(def let crisp.core.let)
+(def drop crisp.core.drop)
+(def empty? crisp.core.empty?)
+
+(defn double
+  [double]
+  (* 2 x))
+
+(defn plustwo
+  [x]
+  (inc (inc x)))
+
+(console.log (plustwo 15))
+(console.log (first (rest (rest (crisp.core.range 10)))))
+(console.log (first (rest (rest (rest (crisp.core.range 10))))))
+
+
+(console.log (let [a 5
+                   b 10]
+               (* a b)))
+
+;; (defn map
+;;   [f coll]
+;;   (if (empty? coll)
+;;     '()
+;;     (cons (f (first coll))
+;;           (map f (rest coll)))))
+
+;; (console.log (rest (map plustwo [1 2 3 4])))
+
+;; (def do (.-do (require "./core")))
+;; (def defn (.-defn (require "./core")))
+;; (def let (.-let (require "./core")))
+
+;; (require [let do defn] "./core")
+
+;; (console.log
+;;  (crisp.core.let [a 5
+;;                   b 10]
+;;                  (* a b)))
+
+
+(defmacro cond
+  [& pairs]
+  (if (< 0 (count pairs))
+    `(if ~(first pairs)
+       ~(second pairs)
+       (cond ~@(rest (rest pairs))))))
+
+(defn sign
+  [x]
+  (cond (< 0 x) :positive
+        (> 0 x) :negative
+        :else :zero
+        ))
+
+(console.log (sign -5))
+(console.log (sign -0))
+(console.log (sign 7))
+
+;;(def b '(1 2 3))
+;;(console.log `(a ~@b c))

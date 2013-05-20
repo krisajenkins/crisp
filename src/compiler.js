@@ -7,7 +7,6 @@ var crisp		= require('./crisp');
 
 var Symbol		= crisp.types.Symbol;
 var Keyword		= crisp.types.Keyword;
-var Vector		= crisp.types.Vector;
 var List		= crisp.types.List;
 var Cons		= crisp.types.Cons;
 var Splice		= crisp.types.Splice;
@@ -123,8 +122,8 @@ var compile = function compile(form, env) {
 		return compile.symbol(form, env);
 	}
 
-	if (form instanceof Vector) {
-		return compile.vector(form, env);
+	if (form instanceof Array) {
+		return compile.array(form, env);
 	}
 
 	if (seq(form) === undefined) {
@@ -187,7 +186,7 @@ compile.symbol = function (form, env) {
 	return crisp.core.format("%s", expanded);
 };
 
-compile.vector = function (form, env) {
+compile.array = function (form, env) {
 	return form.toString();
 };
 
@@ -332,8 +331,8 @@ compile.quote = function (form, env) {
 		);
 	}
 
-	if (form instanceof Vector) {
-		return crisp.core.format("new crisp.types.Vector([%s])", form.map(function (f) { return compile.quote(f, env); }).join(", "));
+	if (form instanceof Array) {
+		return crisp.core.format("[%s]", form.map(function (f) { return compile.quote(f, env); }).join(", "));
 	}
 
 	return compile.quote_atom(form, env);
@@ -366,8 +365,8 @@ compile.syntax_quote = function (form, env) {
 			if (form instanceof Cons) {
 				return "crisp.types.List.EMPTY";
 			}
-			if (form instanceof Vector) {
-				return "crisp.types.Vector.EMPTY";
+			if (form instanceof Array) {
+				return "Array.EMPTY";
 			}
 
 			throw new Error("syntax-quoting an unknown sequence type: " + typeof form);
