@@ -82,7 +82,7 @@ Keyword.prototype.equal = function (other) {
 };
 
 Keyword.prototype.toString = function () {
-	return format("%j", ":" + this.name);
+	return format("%j", this.name);
 };
 
 exports.Keyword = Keyword;
