@@ -17,9 +17,9 @@
   `((fn [] ~@body)))
 
 (defmacro defn
-  [name args body]
+  [name args & body]
   `(def ~name
-     (fn ~args ~body)))
+     (fn ~args ~@body)))
 
 (defn number?
   [x]
@@ -47,8 +47,8 @@
   (Cons. head seq))
 
 (defmacro lazy-seq
-  [body]
-  `(LazySeq. (fn [] ~body)))
+  [& body]
+  `(LazySeq. (fn [] ~@body)))
 
 (defn map
   [f coll]
