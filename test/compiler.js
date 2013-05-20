@@ -266,4 +266,11 @@ describe('compiler', function () {
 		compilesTo("(.-name a-person)", "Kris", env);
 		compilesTo("(.greet a-person)", "Hello Kris", env);
 	});
+
+	it('Recursion', function () {
+		runIn('(def dec (fn [n] (- n 1)))', false, env);
+		runIn('(def fact (fn [n] (if (> 2 n) 1 (* n (fact (dec n))))))', false, env);
+		compilesTo("(fact 5)", 120, env);
+		compilesTo("(fact 10)", 3628800, env);
+	});
 });
