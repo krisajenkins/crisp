@@ -477,3 +477,15 @@ var index_of = function (x, coll) {
 	return loop(0, coll);
 };
 exports.index_of = index_of;
+
+var HashMap = function () {
+	assert.equal(0, arguments.length % 2, "Maps require an even number of forms.");
+	var i;
+
+	for (i = 0; i < arguments.length; i += 2 ) {
+		this[arguments[i]] = arguments[i+1];
+	}
+
+	return this;
+};
+exports.HashMap = HashMap;

@@ -55,8 +55,8 @@ describe('reader', function () {
 		);
 	});
 	it('Maps', function () {
-		assert.deepEqual(read_string("{}").result, [new Symbol("hash-map")]);
-		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("hash-map"), new Symbol("a"), new CrispNumber(1), new Symbol("b"), new CrispNumber(2)]);
+		assert.deepEqual(read_string("{}").result, [new Symbol("crisp.types.HashMap.")]);
+		assert.deepEqual(read_string("{a 1 b 2}").result, [new Symbol("crisp.types.HashMap."), new Symbol("a"), new CrispNumber(1), new Symbol("b"), new CrispNumber(2)]);
 	});
 	it('Quotes', function () {
 		assert.deepEqual(

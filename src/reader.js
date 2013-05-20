@@ -131,7 +131,7 @@ function read_string(string) {
 	match = match_open_brace(string);
 	if (match) {
 		match = read_until(match_close_brace, match.remainder);
-		match.result.unshift(new crisp.types.Symbol("hash-map"));
+		match.result.unshift(new crisp.types.Symbol("crisp.types.HashMap."));
 		return match;
 	}
 
