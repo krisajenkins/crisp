@@ -20,7 +20,8 @@
     "grunt-contrib-copy": "~0.4.1",
     "grunt-contrib-clean": "~0.4.1",
     "grunt-browserify": "~0.2.3",
-    "grunt-closure-compiler": "0.0.17"
+    "grunt-closure-compiler": "0.0.17",
+    "escodegen": "0.0.22"
   },
   "dependencies": {
     "deep-equal": "0.0.0"

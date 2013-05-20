@@ -4,8 +4,10 @@
 
 var vm				= require('vm');
 var assert			= require('assert');
+var escodegen		= require('escodegen');
 var inspect			= require('util').inspect;
 var format			= require('util').format;
+var ast				= require('../build/ast');
 var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
 var Keyword			= crisp.types.Keyword;
@@ -21,13 +23,18 @@ var equal			= require('../build/runtime').equal;
 var compile_string	= require('../build/compiler').compile_string;
 
 var runIn = function (source, debug, env) {
-	var compiled, result;
+	var compiled, compiled_ast, result;
 
-	compiled = compile_string(source, env);
+	compiled_ast = compile_string(source, env);
+	compiled = escodegen.generate(
+		ast.encode.program(compiled_ast)
+	);
 
 	if (debug !== undefined && debug !== false) {
 		console.log("\n==== COMPILED ====");
-		console.log(inspect(compiled, {depth: null}));
+		console.log(inspect(compiled_ast, {depth: null}));
+		console.log("====\n");
+		console.log(compiled);
 		console.log("====\n");
 	}
 
@@ -106,14 +113,14 @@ describe('compiler', function () {
 	});
 
 	it('Varargs functions', function () {
-		compilesTo("((fn [& xs] xs) 1 2 3 4 5)", new List([1, 2, 3, 4, 5]), env);
+		compilesTo("((fn [& xs] xs) 1 2 3 4 5)", [1, 2, 3, 4, 5], env);
 
 		compilesTo("((fn [x & xs] x) 1 2 3 4 5)", 1, env);
-		compilesTo("((fn [x & xs] xs) 1 2 3 4 5)", new List([2, 3, 4, 5]), env);
+		compilesTo("((fn [x & xs] xs) 1 2 3 4 5)", [2, 3, 4, 5], env);
 
 		compilesTo("((fn [x y & xs] x) 1 2 3 4 5)", 1, env);
 		compilesTo("((fn [x y & xs] y) 1 2 3 4 5)", 2, env);
-		compilesTo("((fn [x y & xs] xs) 1 2 3 4 5)", new List([3, 4, 5]), env);
+		compilesTo("((fn [x y & xs] xs) 1 2 3 4 5)", [3, 4, 5], env);
 	});
 
 	it('Def', function () {

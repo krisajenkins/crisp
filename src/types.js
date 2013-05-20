@@ -70,6 +70,14 @@ List.prototype.rest = function () {
 
 	return List.EMPTY;
 };
+List.prototype.toArray = function () {
+	if (this.items.length > 0) {
+		return this.items;
+	}
+
+	return Array.EMPTY;
+};
+
 // TODO Delete this.
 List.prototype.cons = function (head) {
 	return new Cons(head, this);
@@ -187,6 +195,13 @@ Cons.prototype.count = function () {
 	}
 
 	return 1 + count(this.tail);
+};
+Cons.prototype.toArray = function () {
+	if (this.tail === undefined) {
+		return [this.head];
+	}
+
+	return this.tail.toArray().unshift(this.head);
 };
 Cons.prototype.toString = function () {
 	return format("%s %s", this.head, this.tail);
@@ -348,6 +363,11 @@ Splice.prototype.rest = function () {
 	}
 
 	return rest(this.seqb);
+};
+Splice.prototype.count = function () {
+	return count(seq(this.seqa))
+		+
+		count(seq(this.seqb));
 };
 exports.Splice = Splice;
 
