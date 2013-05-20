@@ -29,7 +29,7 @@ var match_open_brace		= make_parser(/^\{/, 'OPEN_BRACE');
 var match_close_brace		= make_parser(/^\}/, 'CLOSE_BRACE');
 var match_number			= make_parser(/^-?\d+(\.\d+)?/, 'NUMBER');
 var match_string			= make_parser(/^"([^"]*)"/m, 'STRING');
-var match_keyword			= make_parser(/^:([\w_\-\+!=?\*]+)/, 'KEYWORD');
+var match_keyword			= make_parser(/^:([\w\._\/\-\+!=<>?&\*]+)/, 'KEYWORD');
 var match_regexp			= make_parser(/^#"([^"]*)"/m, 'REGEXP');
 var match_boolean			= make_parser(/^(true|false)\b/, 'BOOLEAN');
 var match_symbol			= make_parser(/^[\w\._\/\-\+!=<>?&\*]+/, 'SYMBOL');
