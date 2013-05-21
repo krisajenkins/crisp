@@ -151,6 +151,7 @@ primitives[new Symbol("typeof")] = function (args, env) {
 	assert.equal(1, args.count(), "typeof takes exactly one argument. Got: " + args.count());
 	return ast.encode.unary('typeof', first(args), true);
 };
+
 primitives[new Symbol("aset")] = function (args, env) {
 	assert.equal(2, args.count(), "aset takes exactly two arguments. Got: " + args.count());
 	return ast.encode.assignment(
@@ -188,8 +189,8 @@ var compile = function compile(form, env) {
 
 	if (
 		typeof form === "string"
-		||
-		typeof form === "boolean"
+			||
+			typeof form === "boolean"
 	) {
 		return ast.encode.literal(form);
 	}
@@ -257,7 +258,7 @@ compile.symbol = function (form, env) {
 	}
 
 	var expanded = form.name,
-		match = /(.*\.)?(.*)\?$/.exec(expanded);
+	match = /(.*\.)?(.*)\?$/.exec(expanded);
 
 	if (match) {
 		expanded = crisp.core.format("%sis_%s", match[1]||"", match[2]);
@@ -290,13 +291,13 @@ compile.if = function (form, env) {
 
 compile.def = function (form, env) {
 	var name = second(form),
-		value = third(form),
-		compiled_name,
-		compiled_value,
-		evaled_value,
-		macro_code,
-		metadata,
-		statements = [];
+	value = third(form),
+	compiled_name,
+	compiled_value,
+	evaled_value,
+	macro_code,
+	metadata,
+	statements = [];
 
 	assert.equal(true, name instanceof Symbol, "First argument to def must be a symbol.");
 
@@ -344,19 +345,19 @@ compile.def = function (form, env) {
 
 compile.sequence = function (forms, env) {
 	switch (count(forms)) {
-		case 0: return [ast.encode.return(null)];
-		case 1: return [ast.encode.return(compile(first(forms), env))];
-		default: return [ast.encode.box(compile(first(forms)))].concat(compile.sequence(rest(forms), env));
+	case 0: return [ast.encode.return(null)];
+	case 1: return [ast.encode.return(compile(first(forms), env))];
+	default: return [ast.encode.box(compile(first(forms)))].concat(compile.sequence(rest(forms), env));
 	}
 };
 
 compile.fn = function (form, env) {
 	var args = second(form),
-		body = rest(rest(form)),
-	    vararg_point,
-        compiled_args,
-        compiled_vararg,
-        compiled_body;
+	body = rest(rest(form)),
+	vararg_point,
+    compiled_args,
+    compiled_vararg,
+    compiled_body;
 
 	vararg_point = index_of(new Symbol("&"), args);
 	if (vararg_point >= 0) {
@@ -390,10 +391,10 @@ compile.fn = function (form, env) {
 compile.quote_atom = function (form, env) {
 	if (
 		typeof form === 'number'
-		||
-		typeof form === 'boolean'
-		||
-		typeof form === 'string'
+			||
+			typeof form === 'boolean'
+			||
+			typeof form === 'string'
 	) {
 		return compile(form, env);
 	}
@@ -461,8 +462,8 @@ compile.syntax_quote = function (form, env) {
 
 	if (
 		form instanceof List
-		||
-		form instanceof Cons
+			||
+			form instanceof Cons
 	) {
 		if (head_is(form, "unquote")) {
 			assert.equal(2, form.count(), "unquote takes exactly one argument.");
@@ -625,8 +626,8 @@ var compile_string = function (input, env) {
 
 		if (
 			read.type !== "WHITESPACE"
-			&&
-			read.type !== "COMMENT"
+				&&
+				read.type !== "COMMENT"
 		) {
 			compiled = compile(read.result, env);
 			compiled = ast.encode.box(compiled);
@@ -669,8 +670,8 @@ var usage = "USAGE TODO";
 var main = function () {
 	assert.equal(process.argv.length, 4, usage);
 	var input	 = process.argv[2],
-		output	 = process.argv[3],
-		env		 = {};
+	output	 = process.argv[3],
+	env		 = {};
 
 	compile_io(input, output, env, function () { console.log("Done"); });
 };
