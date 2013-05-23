@@ -148,24 +148,7 @@ compile.symbol = function (form, env) {
 		return ast.encode.identifier('undefined');
 	}
 
-	var expanded = form.name,
-	match = /(.*\.)?(.*)\?$/.exec(expanded);
-
-	if (match) {
-		expanded = crisp.core.format("%sis_%s", match[1]||"", match[2]);
-	}
-
-	// JavaScript reserved symbols.
-	expanded = expanded.replace(/-/g,		"_");
-	expanded = expanded.replace(/\*\*/g,	"__");
-	expanded = expanded.replace(/\*/g,		"STAR");
-	expanded = expanded.replace(/!/g,		"BANG");
-
-	// JavaScript reserved words.
-	expanded = expanded.replace(/^do$/g,	"crisp_do");
-	expanded = expanded.replace(/^let$/g,	"crisp_let");
-
-	return ast.encode.identifier(expanded);
+	return ast.encode.identifier(form.toString());
 };
 
 compile.array = function (form, env) {

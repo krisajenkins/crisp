@@ -18,7 +18,24 @@ Symbol.prototype.equal = function (other) {
 };
 
 Symbol.prototype.toString = function () {
-	return this.name.toString();
+	var expanded = this.name,
+	match = /(.*\.)?(.*)\?$/.exec(expanded);
+
+	if (match) {
+		expanded = crisp.core.format("%sis_%s", match[1]||"", match[2]);
+	}
+
+	// JavaScript reserved symbols.
+	expanded = expanded.replace(/-/g,		"_");
+	expanded = expanded.replace(/\*\*/g,	"__");
+	expanded = expanded.replace(/\*/g,		"STAR");
+	expanded = expanded.replace(/!/g,		"BANG");
+
+	// JavaScript reserved words.
+	expanded = expanded.replace(/^do$/g,	"crisp_do");
+	expanded = expanded.replace(/^let$/g,	"crisp_let");
+
+	return expanded;
 };
 
 exports.Symbol = Symbol;
