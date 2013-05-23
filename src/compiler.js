@@ -55,11 +55,7 @@ var macroexpand_1 = function (form, env, debug) {
 		lookup = env.userspace[first(form)];
 		metadata = meta(lookup);
 
-		if (
-			metadata !== undefined
-				&&
-				metadata.macro === true
-		) {
+		if (metadata && metadata.macro === true) {
 			return apply(lookup, rest(form));
 		}
 	}
@@ -191,15 +187,10 @@ compile.def = function (form, env) {
 	);
 
 	metadata = meta(compiled_value);
-	if (metadata !== undefined) {
-		if (metadata.macro === true) {
-			macro_code = escodegen.generate(ast.encode.box(compiled_value));
-			env.userspace[name] = with_meta(
-				metadata,
-				eval(macro_code)
-			);
-		}
 
+	// Store the metadata in the compiled code.
+	// TODO Questionable.
+	if (metadata) {
 		statements.push(
 			ast.encode.box(
 				ast.encode.assignment(
@@ -213,9 +204,20 @@ compile.def = function (form, env) {
 		);
 	}
 
-	statements.push(
-		ast.encode.box(ast.encode.export(compiled_name))
-	);
+	// Store compiled versions of the macros.
+	if (metadata && metadata.macro === true) {
+		macro_code = escodegen.generate(ast.encode.box(compiled_value));
+		env.userspace[name] = with_meta(
+			metadata,
+			eval(macro_code)
+		);
+	}
+
+	if (!(metadata && metadata.private === true)) {
+		statements.push(
+			ast.encode.box(ast.encode.export(compiled_name))
+		);
+	}
 
 	return ast.encode.program(statements);
 };
