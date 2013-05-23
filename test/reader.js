@@ -7,6 +7,11 @@ var Symbol = require('../build/types').Symbol;
 var Keyword = require('../build/types').Keyword;
 var List = require('../build/types').List;
 
+// TODO What should "5.5.5" read to?
+// TODO Escapes in strings.
+// TODO Foreign chars.
+
+
 describe('reader', function () {
 	it('Numbers', function () {
 		assert.deepEqual(read_string("2").result, 2);
