@@ -239,6 +239,7 @@ compile.fn = function (form, env) {
     compiled_vararg,
     compiled_body;
 
+	// Destructuring varargs.
 	vararg_point = index_of(new Symbol("&"), args);
 	if (vararg_point >= 0) {
 		assert.equal(vararg_point + 2, count(args), "Exactly one symbol must follow the & in a varargs declaration.");
