@@ -228,7 +228,7 @@ compile.fn = function (form, env) {
 
 	vararg_point = index_of(new Symbol("&"), args);
 	if (vararg_point >= 0) {
-		assert.equal(vararg_point + 2, args.count(), "Exactly one symbol must follow the & in a varargs declaration.");
+		assert.equal(vararg_point + 2, count(args), "Exactly one symbol must follow the & in a varargs declaration.");
 		compiled_args = second(form).take(vararg_point).map(function (f) { return compile(f, env); });
 
 		compiled_vararg = [ast.encode.argument_splice(
@@ -327,12 +327,12 @@ compile.syntax_quote = function (form, env) {
 			form instanceof Cons
 	) {
 		if (head_is(form, "unquote")) {
-			assert.equal(2, form.count(), "unquote takes exactly one argument.");
+			assert.equal(2, count(form), "unquote takes exactly one argument.");
 			return compile(second(form), env);
 		}
 
 		if (head_is(form, "unquote-splicing")) {
-			assert.equal(2, form.count(), "unquote-splicing takes exactly one argument.");
+			assert.equal(2, count(form), "unquote-splicing takes exactly one argument.");
 			return compile(second(form), env);
 		}
 	}
@@ -441,7 +441,7 @@ compile.application = function (form, env) {
 
 		match = /^.-(.*)/.exec(head.name);
 		if (match) {
-			assert.equal(1, args.count(), "property access takes exactly one argument.");
+			assert.equal(1, count(args), "property access takes exactly one argument.");
 			return ast.encode.member(
 				first(compiled_args),
 				compile(new Symbol(match[1]), env)
