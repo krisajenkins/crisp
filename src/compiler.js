@@ -38,6 +38,7 @@ var meta = function (object) {
 	}
 };
 
+// TODO This should preserve.
 var with_meta = function (metadata, object) {
 	assert.equal(true, object instanceof Object, "First argument to with_meta must be an Object.");
 
@@ -45,6 +46,8 @@ var with_meta = function (metadata, object) {
 	return object;
 };
 
+// macroexpand-1 is as simple as looking at the head of a form, and it it's a known macro, invoking that macro as a function.
+// macroexpand just applies macroexpand-1 repeatedly until the form comes out the same as it went in.
 var macroexpand_1 = function (form, env, debug) {
 	var lookup, metadata, result;
 
@@ -75,10 +78,12 @@ var macroexpand = function (form, env) {
 	return expanded;
 };
 
+// Compilation can be split into three areas. Simple types, special forms (if, def, etc...) and general function application.
 var compile = function (form, env) {
 	assert.equal(true, env !== undefined, "Compilation requires an environment.");
 	form = macroexpand(form, env);
 
+	// Simple types.
 	if (
 		typeof form === "string"
 			||
@@ -101,6 +106,7 @@ var compile = function (form, env) {
 		return compile.array(form, env);
 	}
 
+	// Special forms.
 	if (head_is(form, "if")) {
 		return compile.if(form, env);
 	}
@@ -129,6 +135,7 @@ var compile = function (form, env) {
 		return compile.macroexpand_1(form, env);
 	}
 
+	// General function application.
 	return compile.application(form, env);
 };
 
@@ -146,13 +153,14 @@ compile.number = function (form, env) {
 
 compile.symbol = function (form, env) {
 	if (equal(form, new Symbol("nil"))) {
-		return ast.encode.identifier('undefined');
+		return ast.encode.identifier('undefined'); // TODO null?
 	}
 
 	return ast.encode.identifier(form.toString());
 };
 
 compile.array = function (form, env) {
+	// TODO Wrong.
 	return form.toString();
 };
 
@@ -432,6 +440,7 @@ compile.application = function (form, env) {
 	}
 
 	// Interop.
+	// TODO Is this a reader issue?
 	if (head instanceof Symbol) {
 		match = /(.*)\.$/.exec(head.name);
 		if (match) {
