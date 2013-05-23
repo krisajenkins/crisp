@@ -5,20 +5,13 @@
 var vm				= require('vm');
 var assert			= require('assert');
 var escodegen		= require('escodegen');
-var inspect			= require('util').inspect;
-var format			= require('util').format;
 var ast				= require('../build/ast');
 var crisp			= require('../build/crisp');
 var Symbol			= crisp.types.Symbol;
 var Keyword			= crisp.types.Keyword;
 var List			= crisp.types.List;
-var Cons			= crisp.types.Cons;
 var cons			= crisp.types.cons;
 var assertEq		= require('../build/runtime').assertEq;
-var Quote			= require('../build/runtime').Quote;
-var Unquote			= require('../build/runtime').Unquote;
-var SyntaxQuote		= require('../build/runtime').SyntaxQuote;
-var Procedure		= require('../build/runtime').Procedure;
 var equal			= require('../build/runtime').equal;
 var compile_string	= require('../build/compiler').compile_string;
 
@@ -61,11 +54,7 @@ describe('compiler', function () {
 	var env;
 
 	beforeEach(function () {
-		env = {};
-		env.equal			= equal;
-		env.nil				= undefined;
-		env.exports			= {};
-		env.crisp = require('../build/crisp');
+		env = compiler.create_env();
 	});
 
 	it('Numbers', function () {
@@ -236,8 +225,6 @@ describe('compiler', function () {
 
 	it('Simple Macros', function () {
 		runIn("(def unless (macro [test body] `(if ~test nil ~body)))", false, env);
-		compilesTo("(unless true 1)", undefined, env);
-		compilesTo("(unless false 5)", 5, env);
 
 		compilesTo(
 			"(macroexpand-1 '(unless false 5))",
@@ -249,6 +236,8 @@ describe('compiler', function () {
 			]),
 			env
 		);
+		compilesTo("(unless true 1)", undefined, env);
+		compilesTo("(unless false 5)", 5, env);
 
 		runIn("(def doit (macro [& body] `((fn [] ~@body))))", false, env);
 		compilesTo("(doit 1 (+ 2 4) 6)", 6, env);

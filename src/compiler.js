@@ -31,28 +31,31 @@ var apply		= require('./runtime').apply;
 var read_string	= require('./reader').read_string;
 
 var meta = function (object) {
-	if (object instanceof Object) {
-		return object.metadata;
+	if (object !== undefined) {
+		return object.__metadata__;
 	}
 };
 
 var with_meta = function (metadata, object) {
-	if (typeof object === "string") {
-		object = new String(object);
-	}
+	assert.equal(true, object instanceof Object, "First argument to with_meta must be an Object.");
 
-	object.metadata = metadata;
+	object.__metadata__ = metadata;
 	return object;
 };
 
-var macros = {};
-
 var macroexpand_1 = function (form, env, debug) {
-	var macro, result;
+	var lookup, metadata, result;
+
 	if (is_seq(form)) {
-		macro = macros[first(form)];
-		if (macro !== undefined) {
-			return apply(macro, rest(form));
+		lookup = env.userspace[first(form)];
+		metadata = meta(lookup);
+
+		if (
+			metadata !== undefined
+				&&
+				metadata.macro === true
+		) {
+			return apply(lookup, rest(form));
 		}
 	}
 
@@ -60,33 +63,33 @@ var macroexpand_1 = function (form, env, debug) {
 };
 
 var macroexpand = function (form, env) {
-	var expanded = macroexpand_1(form, env);
-	if (equal(form, expanded)) {
-		return expanded;
-	}
+	var previous, expanded = form;
 
-	return macroexpand(expanded, env);
+	do {
+		previous = expanded;
+		expanded = macroexpand_1(previous, env);
+	} while (! (equal(expanded, previous)));
+
+	return expanded;
 };
 
-
-var compile = function compile(form, env) {
+var compile = function (form, env) {
+	assert.equal(true, env !== undefined, "Compilation requires an environment.");
 	form = macroexpand(form, env);
-
-	if (form === undefined) { return "undefined"; }
-
-	if (typeof form === "number") {
-		return compile.number(form, env);
-	}
 
 	if (
 		typeof form === "string"
 			||
 			typeof form === "boolean"
+			||
+			form instanceof crisp.types.Keyword
 	) {
 		return ast.encode.literal(form);
 	}
 
-	if (form instanceof crisp.types.Keyword) { return form.toString(); }
+	if (typeof form === "number") {
+		return compile.number(form, env);
+	}
 
 	if (form instanceof Symbol) {
 		return compile.symbol(form, env);
@@ -94,10 +97,6 @@ var compile = function compile(form, env) {
 
 	if (form instanceof Array) {
 		return compile.array(form, env);
-	}
-
-	if (seq(form) === undefined) {
-		return ast.encode.literal("undefined");
 	}
 
 	if (head_is(form, "if")) {
@@ -168,7 +167,6 @@ compile.def = function (form, env) {
 	value = third(form),
 	compiled_name,
 	compiled_value,
-	evaled_value,
 	macro_code,
 	metadata,
 	statements = [];
@@ -186,7 +184,10 @@ compile.def = function (form, env) {
 	if (metadata !== undefined) {
 		if (metadata.macro === true) {
 			macro_code = escodegen.generate(ast.encode.box(compiled_value));
-			macros[name] = eval(macro_code);
+			env.userspace[name] = with_meta(
+				metadata,
+				eval(macro_code)
+			);
 		}
 
 		statements.push(
@@ -196,15 +197,7 @@ compile.def = function (form, env) {
 						compiled_name,
 						ast.encode.identifier('__metadata__')
 					),
-					{
-						type: 'ObjectExpression',
-						properties: [{
-							type: 'Property',
-							key: ast.encode.identifier('macro'),
-							value: ast.encode.literal(true),
-							kind: 'init'
-						}]
-					}
+					ast.encode.object(metadata)
 				)
 			)
 		);
@@ -221,7 +214,7 @@ compile.sequence = function (forms, env) {
 	switch (count(forms)) {
 	case 0: return [ast.encode.return(null)];
 	case 1: return [ast.encode.return(compile(first(forms), env))];
-	default: return [ast.encode.box(compile(first(forms)))].concat(compile.sequence(rest(forms), env));
+	default: return [ast.encode.box(compile(first(forms), env))].concat(compile.sequence(rest(forms), env));
 	}
 };
 
@@ -248,18 +241,12 @@ compile.fn = function (form, env) {
 	}
 	compiled_body = compile.sequence(body, env);
 
-	return {
-		type: 'FunctionExpression',
-		id: null,
-		params: compiled_args,
-		defaults: [],
-		body: ast.encode.block(
+	return ast.encode.function(
+		compiled_args,
+		ast.encode.block(
 			compiled_vararg.concat(compiled_body)
-		),
-		rest: null,
-		generator: false,
-		expression: false
-	};
+		)
+	);
 };
 
 compile.quote_atom = function (form, env) {
@@ -457,7 +444,7 @@ compile.application = function (form, env) {
 			assert.equal(1, args.count(), "property access takes exactly one argument.");
 			return ast.encode.member(
 				first(compiled_args),
-				compile(new Symbol(match[1], env))
+				compile(new Symbol(match[1]), env)
 			);
 		}
 
@@ -466,7 +453,7 @@ compile.application = function (form, env) {
 			return ast.encode.call(
 				ast.encode.member(
 					first(compiled_args),
-					compile(new Symbol(match[1], env))
+					compile(new Symbol(match[1]), env)
 				),
 				rest(compiled_args).toArray()
 			);
@@ -479,30 +466,32 @@ compile.application = function (form, env) {
 	);
 };
 
-var preamble = [
-	ast.encode.variable(
-		ast.encode.identifier('crisp'),
-		ast.encode.call(
-			ast.encode.identifier('require'),
-			[ast.encode.literal('./crisp')]
+var preamble = function () {
+	return [
+		ast.encode.variable(
+			ast.encode.identifier('crisp'),
+			ast.encode.call(
+				ast.encode.identifier('require'),
+				[ast.encode.literal('./crisp')]
+			)
 		)
-	)
-];
+	];
+};
+
+var postamble = function () {
+	return [
+	];
+};
 
 var compile_string = function (input, env) {
-	var read, expansion, compiled, result;
-
+	var read, to_compile, compiled,
 	result = [];
 
 	while (input !== "") {
 		read = read_string(input);
 		input = read.remainder;
 
-		if (
-			read.type !== "WHITESPACE"
-				&&
-				read.type !== "COMMENT"
-		) {
+		if (!(read.type === "WHITESPACE" || read.type === "COMMENT")) {
 			compiled = compile(read.result, env);
 			compiled = ast.encode.box(compiled);
 
@@ -516,36 +505,52 @@ exports.compile_string = compile_string;
 
 // TODO Make this asynchronous. (Easy, but making Grunt respect that is harder.)
 var compile_io = function (input, output, env, callback) {
-	var data, compiled_ast, compiled_string;
+	var data, compiled_ast, compiled_output;
 
-	data = fs.readFileSync(input, {encoding: "utf-8"}),
+	data = fs.readFileSync(input, {encoding: "utf-8"});
 
 	compiled_ast = compile_string(data, env);
-	// console.log("\nCompiled");
-	// console.log(util.inspect(compiled_ast, {depth: null}));
-	// console.log("\nCompiled");
-	compiled_string = escodegen.generate(
-		ast.encode.program(preamble.concat(compiled_ast)),
+	compiled_ast = ast.encode.program(preamble().concat(compiled_ast).concat(postamble(output)));
+
+	console.log("\nCompiled ");
+
+	compiled_output = escodegen.generate(
+		compiled_ast,
 		{
 			format: {
 				indent: {
 					style: "\t"
 				}
-			}
+			},
+			sourceMap: input,
+			sourceMapWithCode: true,
 		}
 	);
 
-	fs.writeFileSync(output, compiled_string);
+	fs.writeFileSync(output, compiled_output.code);
 };
 exports.compile_io = compile_io;
 
 var usage = "USAGE TODO";
 
+var create_env = function () {
+	return {
+		crisp: crisp,
+		exports: {},
+		userspace: {
+			defn: crisp.core.defn,
+			crisp: crisp,
+			defmacro: crisp.core.defmacro
+		},
+	};
+};
+exports.create_env = create_env;
+
 var main = function () {
 	assert.equal(process.argv.length, 4, usage);
-	var input	 = process.argv[2],
-	output	 = process.argv[3],
-	env		 = {};
+	var input	= process.argv[2],
+	output		= process.argv[3],
+	env			= create_env();
 
 	compile_io(input, output, env, function () { console.log("Done"); });
 };

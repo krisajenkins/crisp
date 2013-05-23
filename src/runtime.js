@@ -2,12 +2,9 @@
 // START
 "use strict";
 
+var crisp	= require('./crisp');
+var logger = require('tracer').console();
 var assert = require("assert");
-var format = require("util").format;
-var inspect = require("util").inspect;
-var crisp = {
-	types: require('./types')
-};
 
 var is_self_evaluating = function (form) {
 	return ((typeof form === "boolean") || (typeof form === "number") || (typeof form === "string"));
@@ -61,11 +58,11 @@ var assertEq = function (result, expected, message) {
 	assert.equal(
 		true,
 		equal(result, expected),
-		format(
+		crisp.core.format(
 			"%s %s %s",
 			message,
-			inspect(result, {depth: null}),
-			inspect(expected, {depth: null})
+			crisp.core.inspect(result, {depth: null}),
+			crisp.core.inspect(expected, {depth: null})
 		)
 	);
 };

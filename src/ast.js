@@ -29,6 +29,34 @@ var encode = {
 		};
 	},
 
+	object: function (object) {
+		var key, properties = [];
+
+		for (key in object) {
+			if (object.hasOwnProperty(key)) {
+				properties.push(
+					encode.property(
+						encode.identifier(key),
+						encode.literal(object[key])
+					)
+				);
+			}
+		}
+
+		return {
+			type: 'ObjectExpression',
+			properties: properties
+		};
+	},
+
+	property: function(key, value) {
+		return {
+			type: 'Property',
+			key: key,
+			value: value,
+			kind: 'init'
+		};
+	},
 
 	argument_splice: function (name, index) {
 		return encode.variable(
@@ -125,12 +153,26 @@ var encode = {
 			}],
 		};
 	},
+
 	conditional: function (test, consequent, alternate) {
 		return {
 			type: 'ConditionalExpression',
 			test: test,
 			consequent: consequent,
 			alternate: alternate
+		};
+	},
+
+	'function': function (params, body) {
+		return {
+			type: 'FunctionExpression',
+			id: null,
+			params: params,
+			defaults: [],
+			body: body,
+			rest: null,
+			generator: false,
+			expression: false
 		};
 	},
 

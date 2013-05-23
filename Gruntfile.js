@@ -83,8 +83,8 @@ module.exports = function (grunt) {
 
 	grunt.registerMultiTask('crisp', "Compile crisp files to JavaScript", function () {
 		var compiler = require('./lib/compiler'),
-			crisp = require('./lib/crisp'),
-			env = {};
+		crisp = require('./lib/crisp'),
+		env = compiler.create_env();
 
 		grunt.log.writeln("Compiling crisps:");
 		this.files.forEach(function (file) {
