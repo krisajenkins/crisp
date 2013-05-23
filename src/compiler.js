@@ -169,6 +169,7 @@ compile.if = function (form, env) {
 };
 
 compile.def = function (form, env) {
+	assert.equal(3, count(form), "def takes exactly two arguments.");
 	var name = second(form),
 	value = third(form),
 	compiled_name,
