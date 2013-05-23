@@ -156,7 +156,7 @@ Array.EMPTY = [];
 
 var Cons = function (head, tail) {
 	assert.equal(2, arguments.length, "new Cons requires two arguments.");
-	assert.equal(false, arguments[1] === 'undefined', "Second argument to new Cons may not be nil.");
+	assert.equal(false, tail === 'undefined', "Second argument to new Cons may not be nil.");
 
 	this.type = "Cons";
 	this.head = head;
