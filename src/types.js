@@ -57,7 +57,7 @@ Keyword.prototype.toString = function () {
 exports.Keyword = Keyword;
 
 var is_seq = function (form) {
-	return form !== undefined
+	return form
 		&&
 		typeof form.seq === 'function';
 };
@@ -138,8 +138,6 @@ Array.prototype.first = function () {
 	if (this.length > 0) {
 		return this[0];
 	}
-
-	return undefined;
 };
 Array.prototype.rest = function () {
 	if (this.length > 0) {
@@ -235,7 +233,7 @@ var LazySeq = function (thunk) {
 	return this;
 };
 LazySeq.prototype.seq = function () {
-	if (this.thunk !== undefined) {
+	if (this.thunk) {
 		this.value = this.thunk();
 		this.thunk = undefined;
 	}

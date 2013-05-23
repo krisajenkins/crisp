@@ -30,8 +30,10 @@ var equal		= require('./runtime').equal;
 var apply		= require('./runtime').apply;
 var read_string	= require('./reader').read_string;
 
+// Metadata is just a simple __metadata__ property on an object. We supply two helper functions, one to read and one to write.
+// TODO equality checks ought to ignore metadata!
 var meta = function (object) {
-	if (object !== undefined) {
+	if (object) {
 		return object.__metadata__;
 	}
 };
@@ -425,7 +427,7 @@ compile.application = function (form, env) {
 	compiled_args = args.map(function (f) { return compile(f, env); });
 
 	stored = primitives[head];
-	if (stored !== undefined) {
+	if (stored) {
 		return stored(compiled_args, env);
 	}
 
