@@ -2,9 +2,9 @@
 // START
 "use strict";
 
-var assert = require("assert");
-var equal = require("deep-equal");
-var format = require("util").format;
+var assert	= require("assert");
+var equal	= require("deep-equal");
+var crisp	= require('./crisp');
 var inspect = require("util").inspect;
 
 var Symbol = function (name) {
@@ -34,7 +34,7 @@ Keyword.prototype.equal = function (other) {
 };
 
 Keyword.prototype.toString = function () {
-	return format("%j", this.name);
+	return crisp.core.format("%j", this.name);
 };
 
 exports.Keyword = Keyword;
@@ -104,7 +104,7 @@ List.prototype.equal = function (other) {
 	return ((this.type === other.type) && equal(this.items,other.items));
 };
 List.prototype.toString = function () {
-	return format("(%s)", this.items.map(function (x) { return x.toString(); }).join(", "));
+	return crisp.core.format("(%s)", this.items.map(function (x) { return x.toString(); }).join(", "));
 };
 
 exports.List = List;
@@ -204,7 +204,7 @@ Cons.prototype.toArray = function () {
 	return this.tail.toArray().unshift(this.head);
 };
 Cons.prototype.toString = function () {
-	return format("%s %s", this.head, this.tail);
+	return crisp.core.format("%s %s", this.head, this.tail);
 };
 exports.Cons = Cons;
 
@@ -250,7 +250,7 @@ var seq = function (aseq) {
 	assert.equal(
 		true,
 		is_seq(aseq),
-		format(
+		crisp.core.format(
 			"Collection (%s, %s/%s) does not implement seq.",
 			aseq,
 			typeof aseq,
