@@ -109,7 +109,10 @@ var encode = {
 		return {type: 'Program', body: body};
 	},
 	identifier: function (name) {
-		return {type: 'Identifier', name: name};
+		return {
+			type: 'Identifier',
+			name: name,
+		};
 	},
 	variable: function (name, value) {
 		return {
