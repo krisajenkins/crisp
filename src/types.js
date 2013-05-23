@@ -210,7 +210,6 @@ Cons.prototype.count = function () {
 	if (this.tail === undefined) {
 		return 1;
 	}
-
 	return 1 + count(this.tail);
 };
 Cons.prototype.toArray = function () {
@@ -355,24 +354,19 @@ exports.head_is = head_is;
 // END
 
 var Splice = function (seqa, seqb) {
+	assert.equal(true, is_seq(seqa), "First argument to crisp.types.Splice must be a seq.");
+	assert.equal(true, is_seq(seqb), "Second argument to crisp.types.Splice must be a seq.");
+
 	this.seqa = seqa;
 	this.seqb = seqb;
 };
 Splice.prototype.seq = function () {
-	if (seq(this.seqa)) {
-		return this;
-	}
-	if (seq(this.seqb)) {
-		return this;
-	}
+	if (seq(this.seqa)) {return this;}
+	if (seq(this.seqb)) {return this;}
 };
 Splice.prototype.first = function () {
-	if (seq(this.seqa)) {
-		return first(this.seqa);
-	}
-	if (seq(this.seqb)) {
-		return first(this.seqb);
-	}
+	if (seq(this.seqa)) {return first(this.seqa);}
+	if (seq(this.seqb)) {return first(this.seqb);}
 };
 Splice.prototype.rest = function () {
 	if (seq(this.seqa)) {
