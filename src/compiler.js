@@ -479,8 +479,7 @@ var preamble = function () {
 };
 
 var postamble = function () {
-	return [
-	];
+	return [];
 };
 
 var compile_string = function (input, env) {
