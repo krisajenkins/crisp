@@ -309,13 +309,7 @@ compile.quote = function (form, env) {
 
 	if (form instanceof Cons) {
 		return ast.encode.call(
-			ast.encode.member(
-				ast.encode.member(
-					ast.encode.identifier('crisp'),
-					ast.encode.identifier('types')
-				),
-				ast.encode.identifier('cons')
-			),
+			ast.encode.identifier('crisp.types.cons'),
 			[
 				compile.quote(first(form), env),
 				compile.quote(rest(form), env)
@@ -358,16 +352,7 @@ compile.syntax_quote = function (form, env) {
 					||
 					form instanceof Cons
 			) {
-				return ast.encode.member(
-					ast.encode.member(
-						ast.encode.member(
-							ast.encode.identifier('crisp'),
-							ast.encode.identifier('types')
-						),
-						ast.encode.identifier('List')
-					),
-					ast.encode.identifier('EMPTY')
-				);
+				return ast.encode.identifier('crisp.types.List.EMPTY');
 			}
 			if (form instanceof Array) {
 				return ast.encode.array([]);
@@ -377,13 +362,7 @@ compile.syntax_quote = function (form, env) {
 		} else {
 			if (head_is(first(form), "unquote-splicing")) {
 				return ast.encode.call(
-					ast.encode.member(
-						ast.encode.member(
-							ast.encode.identifier('crisp'),
-							ast.encode.identifier('types')
-						),
-						ast.encode.identifier('splice')
-					),
+					ast.encode.identifier('crisp.types.splice'),
 					[
 						compile.syntax_quote(first(form), env),
 						compile.syntax_quote(rest(form), env)
@@ -391,13 +370,7 @@ compile.syntax_quote = function (form, env) {
 				);
 			} else {
 				return ast.encode.call(
-					ast.encode.member(
-						ast.encode.member(
-							ast.encode.identifier('crisp'),
-							ast.encode.identifier('types')
-						),
-						ast.encode.identifier('cons')
-					),
+					ast.encode.identifier('crisp.types.cons'),
 					[
 						compile.syntax_quote(first(form), env),
 						compile.syntax_quote(rest(form), env)
