@@ -68,7 +68,7 @@ function read_until(closing_matcher, string) {
 
 		if (remaining_string === "") {
 			console.log("Forms", forms);
-			throw "Out of string!";
+			throw new Error("Out of string!");
 		}
 	}
 }
