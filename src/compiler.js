@@ -25,6 +25,7 @@ var count		= crisp.types.count;
 var seq			= crisp.types.seq;
 var index_of	= crisp.types.index_of;
 var map			= crisp.types.map;
+var into_array	= crisp.types.into_array;
 
 var equal		= require('./runtime').equal;
 var apply		= require('./runtime').apply;
@@ -247,14 +248,14 @@ compile.fn = function (form, env) {
 	vararg_point = index_of(new Symbol("&"), args);
 	if (vararg_point >= 0) {
 		assert.equal(vararg_point + 2, count(args), "Exactly one symbol must follow the & in a varargs declaration.");
-		compiled_args = second(form).take(vararg_point).map(function (f) { return compile(f, env); });
+		compiled_args = into_array(map(function (f) { return compile(f, env); }, second(form).take(vararg_point)));
 
 		compiled_vararg = [ast.encode.argument_splice(
 			compile(args.nth(vararg_point + 1), env),
 			ast.encode.literal(vararg_point)
 		)];
 	} else {
-		compiled_args = second(form).map(function (f) { return compile(f, env); });
+		compiled_args = into_array(map(function (f) { return compile(f, env); }, second(form)));
 		compiled_vararg = [];
 	}
 	compiled_body = compile.sequence(body, env);
@@ -305,7 +306,7 @@ compile.quote = function (form, env) {
 			ast.encode.identifier("crisp.types.List"),
 			[
 				ast.encode.array(
-					form.map(function (f) { return compile.quote(f, env); }).toArray()
+					into_array(map(function (f) { return compile.quote(f, env); }, form))
 				)
 			]
 		);
@@ -323,7 +324,9 @@ compile.quote = function (form, env) {
 
 	if (form instanceof Array) {
 		return ast.encode.array(
-			form.map(function (f) { return compile.quote(f, env); })
+			into_array(
+				map(function (f) { return compile.quote(f, env); }, form)
+			)
 		);
 	}
 
@@ -413,7 +416,7 @@ compile.application = function (form, env) {
 	head = first(form);
 	args = rest(form);
 
-	compiled_args = args.map(function (f) { return compile(f, env); });
+	compiled_args = into_array(map(function (f) { return compile(f, env); }, args));
 
 	stored = primitives[head];
 	if (stored) {
@@ -427,7 +430,7 @@ compile.application = function (form, env) {
 		if (match) {
 			return ast.encode.new(
 				compile(new Symbol(match[1]), env),
-				compiled_args.toArray()
+				compiled_args
 			);
 		}
 
@@ -447,14 +450,14 @@ compile.application = function (form, env) {
 					first(compiled_args),
 					compile(new Symbol(match[1]), env)
 				),
-				rest(compiled_args).toArray()
+				rest(compiled_args)
 			);
 		}
 	}
 
 	return ast.encode.call(
 		compile(head, env),
-		compiled_args.toArray()
+		compiled_args
 	);
 };
 

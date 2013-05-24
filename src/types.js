@@ -215,7 +215,9 @@ Cons.prototype.toArray = function () {
 		return [this.head];
 	}
 
-	return this.tail.toArray().unshift(this.head);
+	var result = this.tail.toArray();
+	result.unshift(this.head);
+	return result;
 };
 Cons.prototype.toString = function () {
 	return crisp.core.format("%s %s", this.head, this.tail);
@@ -265,16 +267,41 @@ var seq = function (aseq) {
 		true,
 		is_seq(aseq),
 		crisp.core.format(
-			"Collection (%s, %s/%s) does not implement seq.",
+			"Collection (%s, %s/%s/%s) does not implement seq.",
 			aseq,
 			typeof aseq,
-			aseq.type
+			aseq.type,
+			aseq.constructor
 		)
 	);
 
 	return aseq.seq();
 };
 exports.seq = seq;
+
+var into_array = function (aseq) {
+	if (aseq === undefined) {
+		return [];
+	}
+	if (aseq instanceof Array) {
+		return aseq;
+	}
+
+	assert.equal(
+		false,
+		aseq.toArray === undefined,
+		crisp.core.format(
+			"Collection (%s, %s/%s/%s) does not implement toArray.",
+			aseq,
+			typeof aseq,
+			aseq.type,
+			aseq.constructor
+		)
+	);
+
+	return aseq.toArray();
+};
+exports.into_array = into_array;
 
 var first = function (aseq) {
 	if (aseq === undefined) {
@@ -378,6 +405,15 @@ Splice.prototype.count = function () {
 		+
 		count(seq(this.seqb));
 };
+Splice.prototype.toArray = function () {
+	if (this.seqa) {
+		return this.seqa.toArray().concat(this.seqb.toArray());
+	}
+
+	if (this.seqb) {
+		return this.seqb.toArray();
+	}
+}
 exports.Splice = Splice;
 
 var splice = function (seqa, seqb) {
