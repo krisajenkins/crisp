@@ -134,7 +134,10 @@ function read_string(string) {
 	match = match_open_brace(string);
 	if (match) {
 		match = read_until(match_close_brace, match.remainder);
-		match.result.unshift(new crisp.types.Symbol("crisp.types.HashMap."));
+		match.result = new crisp.types.cons(
+			new crisp.types.Symbol("crisp.types.HashMap."),
+			match.result
+		);
 		return match;
 	}
 

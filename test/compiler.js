@@ -265,4 +265,9 @@ describe('compiler', function () {
 		compilesTo("(fact 5)", 120, env);
 		compilesTo("(fact 10)", 3628800, env);
 	});
+
+	it('Maps', function () {
+		compilesTo('{:name "Kris"}', {name: "Kris"}, env);
+		compilesTo('(.-name {:name "Kris"})', "Kris", env);
+	});
 });
