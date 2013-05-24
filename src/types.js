@@ -28,8 +28,11 @@ Symbol.prototype.toString = function () {
 	// JavaScript reserved symbols.
 	expanded = expanded.replace(/-/g,		"_");
 	expanded = expanded.replace(/\*\*/g,	"__");
-	expanded = expanded.replace(/\*/g,		"STAR");
-	expanded = expanded.replace(/!/g,		"BANG");
+	expanded = expanded.replace(/\*/g,		"_STAR_");
+	expanded = expanded.replace(/!/g,		"_BANG_");
+	expanded = expanded.replace(/>/g,		"_GT_");
+	expanded = expanded.replace(/</g,		"_LT_");
+	expanded = expanded.replace(/=/g,		"_EQ_");
 
 	// JavaScript reserved words.
 	expanded = expanded.replace(/^do$/g,	"crisp_do");

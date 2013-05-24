@@ -31,6 +31,9 @@ describe('reader', function () {
 	});
 	it('Strings', function () {
 		assert.deepEqual(read_string('"test"').result, "test");
+		assert.deepEqual(read_string('"test\\nthing"').result, "test\nthing");
+		assert.deepEqual(read_string('"test\\tthing"').result, "test\tthing");
+		assert.deepEqual(read_string('"test\\"thing"').result, 'test"thing');
 	});
 	it('Keywords', function () {
 		assert.deepEqual(read_string(":a").result, new Keyword("a"));

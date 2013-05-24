@@ -29,8 +29,8 @@ var match_open_brace		= make_parser(/^\{/, 'OPEN_BRACE');
 var match_close_brace		= make_parser(/^\}/, 'CLOSE_BRACE');
 var match_number			= make_parser(/^-?\d+(\.\d+)?/, 'NUMBER');
 
-var match_string			= make_parser( /^"([^"\\]*(\\["n][^"\\]*)*)"/m, 'STRING');
-var match_regexp			= make_parser(/^#"([^"\\]*(\\["n][^"\\]*)*)"/m, 'REGEXP');
+var match_string			= make_parser( /^"([^"\\]*(\\["nt][^"\\]*)*)"/m, 'STRING');
+var match_regexp			= make_parser(/^#"([^"\\]*(\\["nt][^"\\]*)*)"/m, 'REGEXP');
 
 var match_boolean			= make_parser(/^(true|false)\b/, 'BOOLEAN');
 
@@ -166,6 +166,9 @@ function read_string(string) {
 	match = match_string(string);
 	if (match) {
 		match.result = match.groups[0];
+		match.result = match.result.replace(/\\n/g, "\n");
+		match.result = match.result.replace(/\\t/g, "\t");
+		match.result = match.result.replace(/\\"/g, '"');
 		return match;
 	}
 
