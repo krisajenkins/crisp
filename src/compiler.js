@@ -525,7 +525,7 @@ var compile_io = function (input, output, env, callback) {
 };
 exports.compile_io = compile_io;
 
-var usage = "USAGE TODO";
+var usage = "USAGE: <input> <output>";
 
 var create_env = function () {
 	return {
@@ -548,6 +548,7 @@ var main = function () {
 
 	compile_io(input, output, env, function () { console.log("Done"); });
 };
+exports.main = main;
 
 if (require.main === module) {
     main();
