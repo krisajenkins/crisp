@@ -2,23 +2,23 @@
 /*global describe: true, it: true, beforeEach: true */
 "use strict";
 
-var vm				= require('vm');
-var assert			= require('assert');
-var escodegen		= require('escodegen');
-var ast				= require('../build/ast');
-var crisp			= require('../build/crisp');
-var Symbol			= crisp.types.Symbol;
-var Keyword			= crisp.types.Keyword;
-var List			= crisp.types.List;
-var cons			= crisp.types.cons;
-var assertEq		= require('../build/runtime').assertEq;
-var equal			= require('../build/runtime').equal;
-var compile_string	= require('../build/compiler').compile_string;
+var vm			= require('vm');
+var assert		= require('assert');
+var escodegen	= require('escodegen');
+var crisp		= require('../build/crisp');
+var Symbol		= crisp.types.Symbol;
+var Keyword		= crisp.types.Keyword;
+var List		= crisp.types.List;
+var cons		= crisp.types.cons;
+var ast			= require('../build/ast');
+var assertEq	= require('../build/runtime').assertEq;
+var equal		= require('../build/runtime').equal;
+var compiler	= require('../build/compiler');
 
 var runIn = function (source, debug, env) {
 	var compiled, compiled_ast, result;
 
-	compiled_ast = compile_string(source, env);
+	compiled_ast = compiler.compile_string(source, env);
 	compiled = escodegen.generate(
 		ast.encode.program(compiled_ast)
 	);
