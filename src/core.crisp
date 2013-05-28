@@ -2,6 +2,7 @@
 (def inspect (.-inspect (require "util")))
 (def equal (require "deep-equal"))
 (def first crisp.types.first)
+(def second crisp.types.second)
 (def rest crisp.types.rest)
 (def count crisp.types.count)
 (def LazySeq crisp.types.LazySeq)
