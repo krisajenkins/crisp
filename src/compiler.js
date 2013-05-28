@@ -493,7 +493,7 @@ var compile_string = function (input, env) {
 		}
 	}
 
-	return result;
+	return ast.encode.program(result);
 };
 exports.compile_string = compile_string;
 
@@ -505,8 +505,6 @@ var compile_io = function (input, output, env, callback) {
 
 	compiled_ast = compile_string(data, env);
 	compiled_ast = ast.encode.program(preamble().concat(compiled_ast).concat(postamble(output)));
-
-	console.log("\nCompiled ");
 
 	compiled_output = escodegen.generate(
 		compiled_ast,

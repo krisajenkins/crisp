@@ -19,9 +19,7 @@ var runIn = function (source, debug, env) {
 	var compiled, compiled_ast, result;
 
 	compiled_ast = compiler.compile_string(source, env);
-	compiled = escodegen.generate(
-		ast.encode.program(compiled_ast)
-	);
+	compiled = escodegen.generate(compiled_ast);
 
 	if (debug !== undefined && debug !== false) {
 		console.log("\n==== COMPILED ====");
