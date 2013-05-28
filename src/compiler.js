@@ -30,6 +30,7 @@ var into_array	= crisp.types.into_array;
 var equal		= require('./runtime').equal;
 var apply		= require('./runtime').apply;
 var read_string	= require('./reader').read_string;
+var repl		= require('./repl');
 
 // Metadata is just a simple __metadata__ property on an object. We
 // supply two helper functions, one to read and one to write.
@@ -539,12 +540,18 @@ var create_env = function () {
 exports.create_env = create_env;
 
 var main = function () {
-	assert.equal(process.argv.length, 4, usage);
-	var input	= process.argv[2],
-	output		= process.argv[3],
-	env			= create_env();
+	if (process.argv.length === 2) {
+		// REPL.
+		repl.start_repl();
+	} else {
+		// Compiler.
+		assert.equal(process.argv.length, 4, usage);
+		var input	= process.argv[2],
+		output		= process.argv[3],
+		env			= create_env();
 
-	compile_io(input, output, env, function () { console.log("Done"); });
+		compile_io(input, output, env, function () { console.log("Done"); });
+	}
 };
 exports.main = main;
 
