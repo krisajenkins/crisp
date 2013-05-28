@@ -532,8 +532,8 @@ var create_env = function () {
 		exports: {},
 		userspace: {
 			defn: crisp.core.defn,
-			crisp: crisp,
-			defmacro: crisp.core.defmacro
+			defmacro: crisp.core.defmacro,
+			let_STAR_: crisp.core.let_STAR_,
 		},
 	};
 };
