@@ -1,26 +1,24 @@
 "use strict";
 
-var vm = require('vm');
-var escodegen = require('escodegen');
-var util = require('util');
-var repl = require('repl');
+var vm			= require('vm');
+var escodegen	= require('escodegen');
+var util		= require('util');
+var repl		= require('repl');
 
-var compiler = require('./compiler');
+var compiler	= require('./compiler');
 var reader		= require('./reader');
 
 var make_eval = function () {
 	var env = compiler.create_env();
 
 	return function (string, context, filename, callback) {
-		var form, tree, compiled, result;
+		var tree, compiled, result;
 		context.command = context.command || "";
 
 		// Node wraps the command in brackets, which is not a Lisp-friendly thing to do.
 		context.command += string.slice(1, -1);
 
 		try {
-			form = reader.read_string(context.command);
-
 			tree = compiler.compile_string(context.command, env);
 			compiled = escodegen.generate(tree);
 
@@ -41,9 +39,6 @@ var make_eval = function () {
 
 var start_repl = function () {
 	var session = repl.start({
-		writer: function (x) {
-			return util.inspect(x, {depth: null});
-		},
 		prompt: "=> ",
 		eval: make_eval(),
 		terminal: false,
