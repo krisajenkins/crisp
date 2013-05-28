@@ -3,6 +3,7 @@
 "use strict";
 
 var vm			= require('vm');
+var util		= require('util');
 var assert		= require('assert');
 var escodegen	= require('escodegen');
 var crisp		= require('../build/crisp');
@@ -23,7 +24,7 @@ var runIn = function (source, debug, env) {
 
 	if (debug !== undefined && debug !== false) {
 		console.log("\n==== COMPILED ====");
-		console.log(inspect(compiled_ast, {depth: null}));
+		console.log(util.inspect(compiled_ast, {depth: null}));
 		console.log("====\n");
 		console.log(compiled);
 		console.log("====\n");
