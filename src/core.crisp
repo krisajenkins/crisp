@@ -75,31 +75,11 @@
     (drop (dec n)
           (rest aseq))))
 
-;; (defn pr-str
-;;   [x]
-;;   (cond
-;;    (number? x) (format "%d" x)
-;;    :else (format "%s" str)))
-
-;; (defn println
-;;   [& xs]
-;;   (apply console.log (map pr-str xs)))
-
-;; (defn println
-;;   [x]
-;;   (console.log
-;;    (pr-str x)
-;;    ))
-
-;; (println (first (range 15)))
-
-;; TODO This could be made more efficient. Take every even-numbered
-;; binding as the arg, every odd-numbered binding as the value.
-(defmacro let
+(defmacro let*
   [bindings & body]
   (if (< (count bindings) 1)
-    `((fn [] ~@body))
+    `(do ~@body)
     `((fn [~(first bindings)]
-        (let ~(rest (rest bindings))
-          ~@body))
+        (let* ~(rest (rest bindings))
+              ~@body))
       ~(second bindings))))
