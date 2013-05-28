@@ -72,7 +72,6 @@ function read_until(closing_matcher, string) {
 		}
 
 		if (remaining_string === "") {
-			console.log("Forms", forms);
 			error = new Error("Unbalanced form.");
 			error.type = "UnbalancedForm";
 			throw error;

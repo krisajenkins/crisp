@@ -6,27 +6,34 @@ var util = require('util');
 var repl = require('repl');
 
 var compiler = require('./compiler');
+var reader		= require('./reader');
 
 var make_eval = function () {
 	var env = compiler.create_env();
 
-	return function (command, context, filename, callback) {
-		var tree, compiled, result;
+	return function (string, context, filename, callback) {
+		var form, tree, compiled, result;
+		context.command = context.command || "";
+
+		// Node wraps the command in brackets, which is not a Lisp-friendly thing to do.
+		context.command += string.slice(1, -1);
 
 		try {
-			// Node wraps the command in brackets, which is not a Lisp-friendly thing to do.
-			command = command.slice(1,-1);
+			form = reader.read_string(context.command);
 
-			tree = compiler.compile_string(command, env);
+			tree = compiler.compile_string(context.command, env);
 			compiled = escodegen.generate(tree);
 
 			result = vm.runInNewContext(compiled, env);
 
+			context.command = "";
 			callback(null, result);
 		} catch (e) {
-			console.log("COMMAND", command);
-			console.log("TREE", util.inspect(tree, {depth: null}));
-			console.log("COMPILED", compiled);
+			if (e.type === "UnbalancedForm") {
+				callback(null, undefined);
+				return;
+			}
+
 			callback(null, e);
 		}
 	};
@@ -40,6 +47,7 @@ var start_repl = function () {
 		prompt: "=> ",
 		eval: make_eval(),
 		terminal: false,
+		ignoreUndefined: true,
 		useColors: true,
 		useGlobal: false,
 	});
