@@ -38,7 +38,7 @@ var make_eval = function () {
 };
 
 var start_repl = function () {
-	var session = repl.start({
+	return repl.start({
 		prompt: "=> ",
 		eval: make_eval(),
 		terminal: false,
@@ -46,7 +46,5 @@ var start_repl = function () {
 		useColors: true,
 		useGlobal: false,
 	});
-
-	return session;
 };
 exports.start_repl = start_repl;
