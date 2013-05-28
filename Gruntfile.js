@@ -107,7 +107,7 @@ module.exports = function (grunt) {
 
 	// Default task(s).
 	grunt.registerTask('compile', ['clean:build', 'copy:build', 'crisp']);
-	grunt.registerTask('approve', ['clean:approve', 'copy:approve', 'default']);
+	grunt.registerTask('approve', ['default', 'clean:approve', 'copy:approve']);
 	grunt.registerTask('test', ['cafemocha']);
 	grunt.registerTask('default', ['compile', 'test']);
 };
