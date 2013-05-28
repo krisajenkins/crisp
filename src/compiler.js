@@ -594,10 +594,12 @@ var usage = "USAGE: <input> <output>";
 var create_env = function () {
 	return {
 		crisp: crisp,
+		require: require,
 		exports: {},
 		defn: crisp.core.defn,
 		defmacro: crisp.core.defmacro,
 		let_STAR_: crisp.core.let_STAR_,
+		crisp_do: crisp.core.crisp_do,
 	};
 };
 exports.create_env = create_env;

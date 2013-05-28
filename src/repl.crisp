@@ -1,0 +1,34 @@
+(def vm (require "vm"))
+(def escodegen (require "escodegen"))
+(def repl (require "repl"))
+(def compiler (require "./compiler"))
+(def reader (require "./reader"))
+
+(defn make-eval
+  []
+  (let* [env (.create-env compiler)
+         command ""]
+        (fn [string _ _ callback]
+          (aset command (+ command
+                           (string.slice 1 -1)))
+          (try
+            (let* [tree (compiler.compile-string command env)
+                   compiled (escodegen.generate tree)
+                   result (vm.runInNewContext compiled env)]
+                  (aset command "")
+                  (callback null result))
+            (catch e
+                (if (= (.-type e) "UnbalancedForm")
+                  (callback null undefined)
+                  (do
+                    (aset command "")
+                    (callback null e))))))))
+
+(defn start-repl
+  []
+  (repl.start {:prompt "=> "
+               :eval (make-eval)
+               :terminal false
+               :ignoreUndefined true
+               :useColors true
+               :useGlobal false}))
