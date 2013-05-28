@@ -57,7 +57,7 @@ var macroexpand_1 = function (form, env, debug) {
 	var lookup, metadata, result;
 
 	if (is_seq(form)) {
-		lookup = env.userspace[first(form)];
+		lookup = env[first(form)];
 		metadata = meta(lookup);
 
 		if (metadata && metadata.macro === true) {
@@ -214,7 +214,7 @@ compile.def = function (form, env) {
 	// Store compiled versions of the macros.
 	if (metadata && metadata.macro === true) {
 		macro_code = escodegen.generate(ast.encode.box(compiled_value));
-		env.userspace[name] = with_meta(
+		env[name] = with_meta(
 			metadata,
 			eval(macro_code)
 		);
@@ -530,11 +530,9 @@ var create_env = function () {
 	return {
 		crisp: crisp,
 		exports: {},
-		userspace: {
-			defn: crisp.core.defn,
-			defmacro: crisp.core.defmacro,
-			let_STAR_: crisp.core.let_STAR_,
-		},
+		defn: crisp.core.defn,
+		defmacro: crisp.core.defmacro,
+		let_STAR_: crisp.core.let_STAR_,
 	};
 };
 exports.create_env = create_env;

@@ -30,7 +30,7 @@ var runIn = function (source, debug, env) {
 	}
 
 	try {
-		result = vm.runInNewContext(compiled, env);
+		result = vm.runInContext(compiled, env);
 	} catch (e) {
 		throw e;
 	}
@@ -52,7 +52,9 @@ describe('compiler', function () {
 	var env;
 
 	beforeEach(function () {
-		env = compiler.create_env();
+		var types = require('../build/types');
+		env = vm.createContext(compiler.create_env());
+		vm.runInContext("crisp.types.patch_array_prototype(Array)", env);
 	});
 
 	it('Numbers', function () {

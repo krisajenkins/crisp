@@ -129,33 +129,41 @@ List.prototype.toString = function () {
 
 exports.List = List;
 
-Array.prototype.count = function () {
-	return this.length;
-};
-Array.prototype.seq = function () {
-	if (this.length > 0) {
-		return this;
-	}
-};
-Array.prototype.first = function () {
-	if (this.length > 0) {
-		return this[0];
-	}
-};
-Array.prototype.rest = function () {
-	if (this.length > 0) {
-		return this.slice(1);
-	}
+// We have to be able to patch difference versions of Array, because
+// Array.prototype isn't shared across contexts (like frames or
+// node.vm.runInContext). This is sad. Maybe patching Array isn't the
+// way to go...
+var patch_array_prototype = function (a) {
+	a.prototype.count = function () {
+		return this.length;
+	};
+	a.prototype.seq = function () {
+		if (this.length > 0) {
+			return this;
+		}
+	};
+	a.prototype.first = function () {
+		if (this.length > 0) {
+			return this[0];
+		}
+	};
+	a.prototype.rest = function () {
+		if (this.length > 0) {
+			return this.slice(1);
+		}
 
-	return Array.EMPTY;
+		return a.EMPTY;
+	};
+	a.prototype.nth = function (n) {
+		return this[n];
+	};
+	a.prototype.take = function (n) {
+		return this.slice(0, n);
+	};
+	a.EMPTY = [];
 };
-Array.prototype.nth = function (n) {
-	return this[n];
-};
-Array.prototype.take = function (n) {
-	return this.slice(0, n);
-};
-Array.EMPTY = [];
+patch_array_prototype(Array);
+exports.patch_array_prototype = patch_array_prototype;
 
 var Cons = function (head, tail) {
 	assert.equal(2, arguments.length, "new Cons requires two arguments.");
