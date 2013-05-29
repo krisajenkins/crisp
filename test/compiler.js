@@ -271,4 +271,12 @@ describe('compiler', function () {
 		compilesTo('{:name "Kris"}', {name: "Kris"}, env);
 		compilesTo('(.-name {:name "Kris"})', "Kris", env);
 	});
+
+	it('Try/Catch/Finally', function () {
+		runIn('(def cflag false)', false, env);
+		runIn('(def fflag false)', false, env);
+		compilesTo('(try 10 (throw "fail") (catch e (aset cflag true) :catch) (finally (aset fflag true) :finally))', "finally", env);
+		compilesTo('cflag', true, env);
+		compilesTo('fflag', true, env);
+	});
 });

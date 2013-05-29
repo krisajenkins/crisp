@@ -121,6 +121,10 @@ var compile = function (form, env) {
 		return compile.fn(form, env);
 	}
 
+	if (head_is(form, "try")) {
+		return compile.try(form, env);
+	}
+
 	if (head_is(form, "quote")) {
 		return compile.quote(second(form), env);
 	}
@@ -230,9 +234,19 @@ compile.def = function (form, env) {
 };
 
 compile.sequence = function (forms, env) {
+	var compiled;
+
 	switch (count(forms)) {
 	case 0: return [ast.encode.return(null)];
-	case 1: return [ast.encode.return(compile(first(forms), env))];
+	case 1: compiled = compile(first(forms), env);
+		if (
+			compiled.type === "ThrowStatement"
+			||
+			compiled.type === "TryStatement"
+		) {
+			return [compiled];
+		}
+		return [ast.encode.return(compiled)];
 	default: return [ast.encode.box(compile(first(forms), env))].concat(compile.sequence(rest(forms), env));
 	}
 };
@@ -266,6 +280,57 @@ compile.fn = function (form, env) {
 		ast.encode.block(
 			compiled_vararg.concat(compiled_body)
 		)
+	);
+};
+
+compile.try = function (form, env) {
+	var head,
+	iterator = rest(form),
+	body_forms = [],
+	catch_form = null,
+	finally_form = null;
+
+	while (seq(iterator)) {
+		head = first(iterator);
+		if (head_is(head, 'catch')) {
+			assert.equal(null, catch_form, "Only 1 catch form is allowed in a try block.");
+			catch_form = head;
+		} else if (head_is(head, 'finally')) {
+			assert.equal(null, finally_form, "Only 1 finally form is allowed in a try block.");
+			finally_form = head;
+		} else {
+			body_forms.push(head);
+		}
+
+		iterator = rest(iterator);
+	}
+	assert.equal(
+		false,
+		catch_form === null && finally_form === null,
+		"A try block must have at least one (catch) or (finally) clause."
+	);
+
+	return ast.encode.call(
+		ast.encode.function(
+			[],
+			ast.encode.block([
+				ast.encode.try(
+					ast.encode.block(
+						compile.sequence(body_forms, env)
+					),
+					ast.encode.catch(
+						compile(second(catch_form), env),
+						ast.encode.block(
+							compile.sequence(rest(rest(catch_form)), env)
+						)
+					),
+					finally_form === null ? null : ast.encode.block(
+						compile.sequence(rest(finally_form), env)
+					)
+				),
+			])
+		),
+		[]
 	);
 };
 

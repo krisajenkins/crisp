@@ -102,6 +102,13 @@ primitives[new Symbol("aset")] = function (args, env) {
 	);
 };
 
+primitives[new Symbol("throw")] = function (args, env) {
+	assert.equal(1, count(args), "throw takes exactly one arguments. Got: " + count(args));
+	return ast.encode.throw(
+		first(args)
+	);
+};
+
 primitives[new Symbol("gensym")] = function (args, env) {
 	assert.equal(true, count(args) < 2, "aset takes at most one argument. Got: " + count(args));
 	var prefix;
