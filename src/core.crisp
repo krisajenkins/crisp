@@ -1,9 +1,12 @@
 (def format (.-format (require "util")))
 (def inspect (.-inspect (require "util")))
 (def equal (require "deep-equal"))
+(def seq crisp.types.seq)
+(def is_seq crisp.types.is_seq)
 (def first crisp.types.first)
 (def second crisp.types.second)
 (def rest crisp.types.rest)
+(def next crisp.types.next)
 (def count crisp.types.count)
 (def LazySeq crisp.types.LazySeq)
 (def Cons crisp.types.Cons)
@@ -51,11 +54,21 @@
   [& body]
   `(LazySeq. (fn [] ~@body)))
 
+(defmacro let*
+  [bindings & body]
+  (if (< (count bindings) 1)
+    `(do ~@body)
+    `((fn [~(first bindings)]
+        (let* ~(rest (rest bindings))
+              ~@body))
+      ~(second bindings))))
+
 (defn map
   [f coll]
   (lazy-seq
-   (cons (f (first coll))
-         (map f (rest coll)))))
+   (if (seq coll)
+     (cons (f (first coll))
+           (map f (rest coll))))))
 
 (defn join
   [coll string]
@@ -75,11 +88,15 @@
     (drop (dec n)
           (rest aseq))))
 
-(defmacro let*
-  [bindings & body]
-  (if (< (count bindings) 1)
-    `(do ~@body)
-    `((fn [~(first bindings)]
-        (let* ~(rest (rest bindings))
-              ~@body))
-      ~(second bindings))))
+(defn identity [x] x)
+
+(defmacro doto
+ [x & forms]
+ (let* [gx (gensym)]
+  `(let* [~gx ~x]
+	  ~@(map (fn [f]
+			  (if (seq? f)
+			   `(~(first f) ~gx ~@(next f))
+			   `(~f ~gx)))
+		  forms)
+	  ~gx)))

@@ -75,6 +75,10 @@ describe('compiler', function () {
 		compilesTo('\'"Something"', "Something", env);
 	});
 
+	it('Nil', function () {
+		compilesTo("nil", undefined, env);
+	});
+
 	it('nil', function () {
 		compilesTo("nil", undefined, env);
 		compilesTo("'nil", new Symbol("nil"), env);
@@ -285,5 +289,35 @@ describe('compiler', function () {
 		compilesTo('(try 10 (throw "fail") (catch e (aset cflag true) :catch) (finally (aset fflag true) :finally))', "finally", env);
 		compilesTo('cflag', true, env);
 		compilesTo('fflag', true, env);
+	});
+
+	it('Clojure-style seqs', function () {
+		compilesTo("(first [1 2])", 1, env);
+		compilesTo("(first [])", undefined, env);
+		compilesTo("(first '())", undefined, env);
+		compilesTo("(first nil)", undefined, env);
+
+		compilesTo("(rest [1 2])", [2], env);
+		compilesTo("(rest [])", [], env);
+		compilesTo("(rest '())", [], env);
+		compilesTo("(rest nil)", [], env);
+
+		compilesTo("(next [1 2])", [2], env);
+		compilesTo("(next [])", undefined, env);
+		compilesTo("(next '())", undefined, env);
+		compilesTo("(next nil)", undefined, env);
+
+		compilesTo("(seq [1 2])", [1, 2], env);
+		compilesTo("(seq [])", undefined, env);
+		compilesTo("(seq '())", undefined, env);
+		compilesTo("(seq nil)", undefined, env);
+		compilesTo("(seq [nil])", [undefined], env);
+
+		compilesTo("(cons nil [2])", [undefined, 2], env);
+		compilesTo("(cons nil [])", [undefined], env);
+		compilesTo("(cons nil '())", [undefined], env);
+		compilesTo("(cons nil nil)", [undefined], env);
+
+		compilesTo("(map (fn [x] (* 2 x)) [1 2 3 4 5])", [2, 4, 6, 8, 10], env);
 	});
 });

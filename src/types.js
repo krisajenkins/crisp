@@ -5,7 +5,6 @@
 var assert	= require("assert");
 var equal	= require("deep-equal");
 var crisp	= require('./crisp');
-var inspect = require("util").inspect;
 
 var Symbol = function (name) {
 	this.type = "Symbol";
@@ -182,6 +181,7 @@ var map = function (f, coll) {
 		return undefined;
 	}
 	coll = seq(coll);
+
 	if (coll === undefined) {
 		return undefined;
 	}
@@ -226,7 +226,7 @@ Cons.prototype.toArray = function () {
 		return [this.head];
 	}
 
-	var result = this.tail.toArray();
+	var result = into_array(this.tail);
 	result.unshift(this.head);
 	return result;
 };
@@ -267,6 +267,16 @@ LazySeq.prototype.rest = function () {
 
 	return List.EMPTY;
 };
+LazySeq.prototype.toArray = function () {
+	var result = [], iterator = this;
+
+	while (seq(iterator)) {
+		result.push(first(iterator));
+		iterator = rest(iterator);
+	}
+
+	return result;
+};
 exports.LazySeq = LazySeq;
 
 var seq = function (aseq) {
@@ -274,17 +284,17 @@ var seq = function (aseq) {
 		return undefined;
 	}
 
-	assert.equal(
-		true,
-		is_seq(aseq),
-		crisp.core.format(
-			"Collection (%s, %s/%s/%s) does not implement seq.",
-			aseq,
-			typeof aseq,
-			aseq.type,
-			aseq.constructor
-		)
-	);
+	if (! is_seq(aseq)) {
+		throw new Error(
+			crisp.core.format(
+				"Collection (%s, %s/%s/%s) does not implement seq.",
+				aseq,
+				typeof aseq,
+				aseq.type,
+				aseq.constructor
+			)
+		);
+	}
 
 	return aseq.seq();
 };
@@ -390,8 +400,8 @@ exports.head_is = head_is;
 // END
 
 var Splice = function (seqa, seqb) {
-	assert.equal(true, is_seq(seqa), "First argument to crisp.types.Splice must be a seq.");
-	assert.equal(true, is_seq(seqb), "Second argument to crisp.types.Splice must be a seq.");
+	assert.equal(true, is_seq(seqa), "First argument to crisp.types.Splice must be a seq. Instead got: " + seqa);
+	assert.equal(true, is_seq(seqb), "Second argument to crisp.types.Splice must be a seq. Instead got: " + seqb);
 
 	this.seqa = seqa;
 	this.seqb = seqb;
@@ -418,16 +428,24 @@ Splice.prototype.count = function () {
 };
 Splice.prototype.toArray = function () {
 	if (this.seqa) {
-		return this.seqa.toArray().concat(this.seqb.toArray());
+		return into_array(this.seqa).concat(into_array(this.seqb));
 	}
 
 	if (this.seqb) {
-		return this.seqb.toArray();
+		return into_array(this.seqb);
 	}
 }
 exports.Splice = Splice;
 
 var splice = function (seqa, seqb) {
+	if (seqa === undefined) {
+		return seqb;
+	}
+
+	if (seqb === undefined) {
+		return seqa;
+	}
+
 	return new Splice(seqa, seqb);
 };
 exports.splice = splice;
