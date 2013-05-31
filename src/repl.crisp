@@ -4,11 +4,13 @@
 (def compiler (require "./compiler"))
 (def reader (require "./reader"))
 
-(defn make-eval
+(defn make-session
   []
-  (let* [env (.create-env compiler)
-         command ""]
+  (let* [command ""
+         env (.create-env compiler)]
         (fn [string _ _ callback]
+          ;; Append the string. Node wraps it in ()s, which is not a
+          ;; Lisp-friendly thing to do...
           (aset command (+ command
                            (string.slice 1 -1)))
           (try
@@ -27,7 +29,7 @@
 (defn start-repl
   []
   (repl.start {:prompt "=> "
-               :eval (make-eval)
+               :eval (make-session)
                :terminal false
                :ignoreUndefined true
                :useColors true
