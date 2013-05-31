@@ -20,12 +20,16 @@ var runIn = function (source, debug, env) {
 	var compiled, compiled_ast, result;
 
 	compiled_ast = compiler.compile_string(source, env);
-	compiled = escodegen.generate(compiled_ast);
 
-	if (debug !== undefined && debug !== false) {
+	if (debug) {
 		console.log("\n==== COMPILED ====");
 		console.log(util.inspect(compiled_ast, {depth: null}));
 		console.log("====\n");
+	}
+
+	compiled = escodegen.generate(compiled_ast);
+
+	if (debug) {
 		console.log(compiled);
 		console.log("====\n");
 	}
