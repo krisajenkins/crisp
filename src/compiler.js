@@ -165,8 +165,9 @@ compile.symbol = function (form, env) {
 };
 
 compile.array = function (form, env) {
-	// TODO Wrong.
-	return form.toString();
+	return ast.encode.array(
+		into_array(map(function (f) { return compile(f, env); }, form))
+	);
 };
 
 compile.if = function (form, env) {

@@ -117,6 +117,9 @@ describe('compiler', function () {
 		runIn("(def a 5)", false, env);
 		compilesTo("a", 5, env);
 
+		runIn("(def b [1 2 3])", false, env);
+		compilesTo("b", [1, 2, 3], env);
+
 		runIn("(def double (fn [x] (* 2 x)))", false, env);
 		compilesTo("(double 5)", 10, env);
 		compilesTo("(double 12)", 24, env);
