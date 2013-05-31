@@ -1,6 +1,5 @@
 "use strict";
 
-var format = require('util').format;
 var crisp = {
 	types: require('./types')
 };
@@ -203,7 +202,7 @@ function read_string(string) {
 		return match;
 	}
 
-	throw new Error(format('Can\'t parse: "%s"', string));
+	throw new Error("Can't parse: " + string);
 }
 exports.read_string = read_string;
 
