@@ -1,0 +1,10 @@
+(def http (require "http"))
+
+(defn handler
+  [request response]
+  (doto response
+    (.writeHead 200 {:Content-Type "text/plain"})
+    (.end "Hello World\n")))
+
+(def server (.createServer http handler))
+(.listen server 1337 "127.0.0.1")
