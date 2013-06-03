@@ -17,7 +17,7 @@ var count		= crisp.types.count;
 var splice		= crisp.types.splice;
 var index_of	= crisp.types.index_of;
 var range		= crisp.core.range;
-var assertEq	= require('../build/runtime').assertEq;
+var assertEq	= require('./testutils').assertEq;
 
 var equal		= crisp.core.equal;
 var format		= crisp.core.format;

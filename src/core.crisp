@@ -8,6 +8,7 @@
 (def rest crisp.types.rest)
 (def next crisp.types.next)
 (def count crisp.types.count)
+(def into-array crisp.types.into-array)
 (def LazySeq crisp.types.LazySeq)
 (def Cons crisp.types.Cons)
 
@@ -120,3 +121,7 @@
         `(~@form ~x)
         (list form x)))
     x))
+
+(defn apply
+  [f aseq]
+  (.apply f nil (into-array aseq)))

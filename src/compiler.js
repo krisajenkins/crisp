@@ -27,8 +27,6 @@ var index_of	= crisp.types.index_of;
 var map			= crisp.types.map;
 var into_array	= crisp.types.into_array;
 
-var equal		= require('./runtime').equal;
-var apply		= require('./runtime').apply;
 var read_string	= require('./reader').read_string;
 
 // Metadata is just a simple __metadata__ property on an object. We
@@ -60,7 +58,7 @@ var macroexpand_1 = function (form, env, debug) {
 		metadata = meta(lookup);
 
 		if (metadata && metadata.macro === true) {
-			return apply(lookup, rest(form));
+			return crisp.core.apply(lookup, rest(form));
 		}
 	}
 
@@ -73,7 +71,7 @@ var macroexpand = function (form, env) {
 	do {
 		previous = expanded;
 		expanded = macroexpand_1(previous, env);
-	} while (! (equal(expanded, previous)));
+	} while (! (crisp.types.equal(expanded, previous)));
 
 	return expanded;
 };
@@ -161,7 +159,7 @@ compile.number = function (form, env) {
 };
 
 compile.symbol = function (form, env) {
-	if (equal(form, new Symbol("nil"))) {
+	if (crisp.types.equal(form, new Symbol("nil"))) {
 		return ast.encode.identifier('undefined'); // TODO null?
 	}
 
@@ -609,6 +607,7 @@ var create_env = function () {
 		next: crisp.types.next,
 		cons: crisp.types.cons,
 		seq: crisp.types.seq,
+		into_array: crisp.types.into_array,
 		is_seq: crisp.types.is_seq,
 		map: crisp.core.map,
 		identity: crisp.core.identity,

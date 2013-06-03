@@ -6,15 +6,16 @@ var vm			= require('vm');
 var util		= require('util');
 var assert		= require('assert');
 var escodegen	= require('escodegen');
+
 var crisp		= require('../build/crisp');
 var Symbol		= crisp.types.Symbol;
 var Keyword		= crisp.types.Keyword;
 var List		= crisp.types.List;
 var cons		= crisp.types.cons;
+
 var ast			= require('../build/ast');
-var assertEq	= require('../build/runtime').assertEq;
-var equal		= require('../build/runtime').equal;
 var compiler	= require('../build/compiler');
+var assertEq	= require('./testutils').assertEq;
 
 var runIn = function (source, debug, env) {
 	var compiled, compiled_ast, result;
