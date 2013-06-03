@@ -384,6 +384,11 @@ var rest = function (aseq) {
 };
 exports.rest = rest;
 
+var is_empty = function (aseq) {
+	return seq(aseq) === undefined;
+}
+exports.is_empty = is_empty;
+
 var count = function (aseq) {
 	if (aseq === undefined) {
 		return 0;
@@ -428,8 +433,6 @@ var head_is = function (form, symbol_name) {
 	(equal(form.first(), new Symbol(symbol_name)));
 };
 exports.head_is = head_is;
-
-// END
 
 var Splice = function (seqa, seqb) {
 	assert.equal(true, is_seq(seqa), "First argument to crisp.types.Splice must be a seq. Instead got: " + seqa);
