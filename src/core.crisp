@@ -100,3 +100,23 @@
 			   `(~f ~gx)))
 		  forms)
 	  ~gx)))
+
+(defmacro ->
+  [x form & more]
+  (if form
+    (if (seq more)
+      `(-> (-> ~x ~form) ~@more)
+      (if (seq? form)
+        `(~(first form) ~x ~@(next form))
+        (list form x)))
+    x))
+
+(defmacro ->>
+  [x form & more]
+  (if form
+    (if (seq more)
+      `(->> (->> ~x ~form) ~@more)
+      (if (seq? form)
+        `(~@form ~x)
+        (list form x)))
+    x))

@@ -612,6 +612,8 @@ var create_env = function () {
 		is_seq: crisp.types.is_seq,
 		map: crisp.core.map,
 		identity: crisp.core.identity,
+		__GT_: crisp.core.__GT_,
+		__GT__GT_: crisp.core.__GT__GT_,
 		let_STAR_: crisp.core.let_STAR_,
 		crisp_do: crisp.core.crisp_do,
 	};
