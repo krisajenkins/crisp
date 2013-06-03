@@ -9,7 +9,6 @@ var links = document.getElementsByTagName('script');
 var env = compiler.create_env();
 var block, tree, compiled, i;
 
-
 for (i = 0; i < links.length; i++) {
 	block = links[i];
 	if (block.type === 'text/crisp') {
