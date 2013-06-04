@@ -223,10 +223,18 @@ var encode = {
 	},
 
 	'throw': function (arg) {
-		return {
-			type: 'ThrowStatement',
-			argument: arg,
-		};
+		return encode.call(
+			encode.function(
+				[],
+				encode.block([
+					{
+						type: 'ThrowStatement',
+						argument: arg,
+					}
+				])
+			),
+			[]
+		);
 	},
 
 	'catch': function (param, body) {
