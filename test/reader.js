@@ -34,6 +34,8 @@ describe('reader', function () {
 		assert.deepEqual(read_string('"test\\nthing"').result, "test\nthing");
 		assert.deepEqual(read_string('"test\\tthing"').result, "test\tthing");
 		assert.deepEqual(read_string('"test\\"thing"').result, 'test"thing');
+		assert.deepEqual(read_string('"test(some)thing"').result, 'test(some)thing');
+		assert.deepEqual(read_string('"test[some]thing"').result, 'test[some]thing');
 	});
 	it('Keywords', function () {
 		assert.deepEqual(read_string(":a").result, new Keyword("a"));
@@ -133,6 +135,20 @@ describe('reader', function () {
 			new List([
 				new Symbol("RegExp."),
 				"[aeiou]",
+			])
+		);
+		assert.deepEqual(
+			read_string('#"a\\[c\\]e"').result,
+			new List([
+				new Symbol("RegExp."),
+				"a\\[c\\]e"
+			])
+		);
+		assert.deepEqual(
+			read_string('#"a\\(c\\)e"').result,
+			new List([
+				new Symbol("RegExp."),
+				"a\\(c\\)e"
 			])
 		);
 	});
