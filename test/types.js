@@ -9,6 +9,7 @@ var Cons		= crisp.types.Cons;
 var Keyword		= crisp.types.Keyword;
 var List		= crisp.types.List;
 var is_seq		= crisp.types.is_seq;
+var is_array	= crisp.types.is_array;
 var seq			= crisp.types.seq;
 var first		= crisp.types.first;
 var rest		= crisp.types.rest;
@@ -183,5 +184,11 @@ describe('Equality', function () {
 			),
 			new List([1, 2, 3, 4, 5])
 		);
+	});
+
+	it('Type tests.', function () {
+		assert.equal(true, is_array([]));
+		assert.equal(false, is_array(list(1, 2, 3)));
+		assert.equal(false, is_array(undefined));
 	});
 });

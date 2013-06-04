@@ -1,5 +1,7 @@
 "use strict";
 
+var is_array = require('./types').is_array;
+
 var encode = {
 	expression: function (expression) { return {type: 'ExpressionStatement', expression: expression}; },
 	literal: function (value) { return {type: 'Literal', value: value}; },
@@ -124,7 +126,7 @@ var encode = {
 		};
 	},
 	block: function (body) {
-		if (! body instanceof Array) {
+		if (!is_array(body)) {
 			body = [body];
 		}
 

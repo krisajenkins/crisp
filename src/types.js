@@ -332,11 +332,17 @@ var seq = function (aseq) {
 };
 exports.seq = seq;
 
+var is_array = function (object) {
+	return Object.prototype.toString.call(object) === "[object Array]";
+};
+exports.is_array = is_array;
+
 var into_array = function (aseq) {
 	if (aseq === undefined) {
 		return [];
 	}
-	if (aseq instanceof Array) {
+
+	if (is_array(aseq)) {
 		return aseq;
 	}
 

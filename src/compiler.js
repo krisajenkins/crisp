@@ -15,6 +15,7 @@ var Cons		= crisp.types.Cons;
 var cons		= crisp.types.cons;
 var is_seq		= crisp.types.is_seq;
 var head_is		= crisp.types.head_is;
+var is_array	= crisp.types.is_array;
 var first		= crisp.types.first;
 var second		= crisp.types.second;
 var third		= crisp.types.third;
@@ -105,7 +106,7 @@ var compile = function (form, env) {
 		return compile.symbol(form, env);
 	}
 
-	if (form instanceof Array) {
+	if (is_array(form)) {
 		return compile.array(form, env);
 	}
 
@@ -393,7 +394,7 @@ compile.quote = function (form, env) {
 		);
 	}
 
-	if (form instanceof Array) {
+	if (is_array(form)) {
 		return ast.encode.array(
 			into_array(
 				map(function (f) { return compile.quote(f, env); }, form)
@@ -432,7 +433,7 @@ compile.syntax_quote = function (form, env) {
 			) {
 				return ast.encode.identifier('undefined');
 			}
-			if (form instanceof Array) {
+			if (is_array(form)) {
 				return ast.encode.array([]);
 			}
 
