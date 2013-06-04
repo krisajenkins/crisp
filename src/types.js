@@ -160,6 +160,11 @@ List.prototype.toString = function () {
 
 exports.List = List;
 
+var list = function () {
+	return new List(Array.prototype.slice.call(arguments, 0));
+};
+exports.list = list;
+
 // We have to be able to patch difference versions of Array, because
 // Array.prototype isn't shared across contexts (like frames or
 // node.vm.runInContext). This is sad. Maybe patching Array isn't the

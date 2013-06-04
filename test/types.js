@@ -8,6 +8,7 @@ var Symbol		= crisp.types.Symbol;
 var Cons		= crisp.types.Cons;
 var Keyword		= crisp.types.Keyword;
 var List		= crisp.types.List;
+var list		= crisp.types.list;
 var is_seq		= crisp.types.is_seq;
 var is_array	= crisp.types.is_array;
 var seq			= crisp.types.seq;
