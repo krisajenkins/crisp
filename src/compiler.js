@@ -597,25 +597,28 @@ exports.compile_io = compile_io;
 
 var create_env = function () {
 	return {
-		crisp: crisp,
 		require: require,
 		exports: {},
+		crisp: crisp,
 		defn: crisp.core.defn,
 		defmacro: crisp.core.defmacro,
 		doto: crisp.core.doto,
-		first: crisp.types.first,
-		rest: crisp.types.rest,
-		next: crisp.types.next,
-		cons: crisp.types.cons,
-		seq: crisp.types.seq,
-		into_array: crisp.types.into_array,
-		is_seq: crisp.types.is_seq,
 		map: crisp.core.map,
 		identity: crisp.core.identity,
+		when: crisp.core.when,
+		cond: crisp.core.cond,
 		__GT_: crisp.core.__GT_,
 		__GT__GT_: crisp.core.__GT__GT_,
 		let_STAR_: crisp.core.let_STAR_,
 		crisp_do: crisp.core.crisp_do,
+		first: crisp.types.first,
+		rest: crisp.types.rest,
+		next: crisp.types.next,
+		cons: crisp.types.cons,
+		list: crisp.types.list,
+		seq: crisp.types.seq,
+		into_array: crisp.types.into_array,
+		is_seq: crisp.types.is_seq,
 	};
 };
 exports.create_env = create_env;

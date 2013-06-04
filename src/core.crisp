@@ -125,3 +125,16 @@
 (defn apply
   [f aseq]
   (.apply f nil (into-array aseq)))
+
+(defmacro when
+  [test & body]
+  `(if ~test (do ~@body)))
+
+(defmacro cond
+  [& clauses]
+    (when (seq clauses)
+      (crisp.types.list 'if (first clauses)
+            (if (next clauses)
+                (second clauses)
+                (throw (Error. "cond requires an even number of forms")))
+            (cons 'cond (next (next clauses))))))
