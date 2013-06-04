@@ -67,7 +67,7 @@
 (defn map
   [f coll]
   (lazy-seq
-   (if (seq coll)
+   (when (seq coll)
      (cons (f (first coll))
            (map f (rest coll))))))
 
@@ -138,3 +138,29 @@
                         (second clauses)
                         (throw (Error. "cond requires an even number of forms")))
                       (cons 'cond (next (next clauses))))))
+
+(defn complement
+  [f]
+  (fn [& args] (not (apply f args))))
+
+(defn filter
+  [pred coll]
+  (lazy-seq
+   (let* [s (seq coll)]
+         (when s
+           (if (pred (first s))
+             (cons (first s) (filter pred (rest s)))
+             (filter pred (rest s)))))))
+
+(defn remove
+  [pred coll]
+  (filter (complement pred) coll))
+
+(defn take
+  [n coll]
+  (lazy-seq
+   (when (< 0 n)
+     (let* [s (seq coll)]
+           (if s
+             (cons (first s)
+                   (take (dec n) (rest s))))))))
