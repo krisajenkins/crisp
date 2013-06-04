@@ -324,7 +324,7 @@ var seq = function (aseq) {
 	if (! is_seq(aseq)) {
 		throw new Error(
 			crisp.core.format(
-				"Collection (%s, %s/%s/%s) does not implement seq.",
+				"Form (%s, %s/%s/%s) does not implement seq.",
 				aseq,
 				typeof aseq,
 				aseq.type,

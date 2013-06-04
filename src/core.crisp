@@ -92,15 +92,15 @@
 (defn identity [x] x)
 
 (defmacro doto
- [x & forms]
- (let* [gx (gensym)]
-  `(let* [~gx ~x]
-	  ~@(map (fn [f]
-			  (if (seq? f)
-			   `(~(first f) ~gx ~@(next f))
-			   `(~f ~gx)))
-		  forms)
-	  ~gx)))
+  [x & forms]
+  (let* [gx (gensym)]
+        `(let* [~gx ~x]
+               ~@(map (fn [f]
+                        (if (seq? f)
+                          `(~(first f) ~gx ~@(next f))
+                          `(~f ~gx)))
+                      forms)
+               ~gx)))
 
 (defmacro ->
   [x form & more]
@@ -132,9 +132,9 @@
 
 (defmacro cond
   [& clauses]
-    (when (seq clauses)
-      (crisp.types.list 'if (first clauses)
-            (if (next clauses)
-                (second clauses)
-                (throw (Error. "cond requires an even number of forms")))
-            (cons 'cond (next (next clauses))))))
+  (when (seq clauses)
+    (crisp.types.list 'if (first clauses)
+                      (if (next clauses)
+                        (second clauses)
+                        (throw (Error. "cond requires an even number of forms")))
+                      (cons 'cond (next (next clauses))))))
