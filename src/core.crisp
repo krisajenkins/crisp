@@ -44,8 +44,8 @@
     (or (= (typeof form) "number")
         (= (typeof form) "string"))))
 
-(defn inc [x] (+ 1 x))
-(defn dec [x] (- 1 x))
+(defn inc [x] (+ x 1))
+(defn dec [x] (- x 1))
 
 (defn cons
   [head seq]
