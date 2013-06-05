@@ -1,1 +1,0 @@
-(require [do defn let defmacro] "../src/stdlib")
