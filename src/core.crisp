@@ -164,3 +164,12 @@
            (if s
              (cons (first s)
                    (take (dec n) (rest s))))))))
+
+(defn drop
+  [n coll]
+  (let* [step (fn [n coll]
+                (let* [s (seq coll)]
+                      (if (and (< 0 n) s)
+                        (drop (dec n) (rest s))
+                        s)))]
+        (lazy-seq (step n coll))))
