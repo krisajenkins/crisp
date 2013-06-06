@@ -285,6 +285,11 @@ var LazySeq = function (thunk) {
 LazySeq.prototype.seq = function () {
 	if (this.thunk) {
 		this.value = this.thunk();
+
+		while (this.value && this.value.type === 'LazySeq') {
+			this.value = this.value.seq();
+		}
+
 		this.thunk = undefined;
 	}
 
