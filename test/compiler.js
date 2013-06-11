@@ -321,4 +321,32 @@ describe('compiler', function () {
 
 		compilesTo("(map (fn [x] (* 2 x)) [1 2 3 4 5])", [2, 4, 6, 8, 10], env);
 	});
+
+	it('Clojure-style seq?', function () {
+		compilesTo("(seq? '())", true, env);
+		compilesTo("(seq? '(1 2 3))", true, env);
+
+		compilesTo("(seq? [])", false, env);
+		compilesTo("(seq? [1 2 3])", false, env);
+
+		compilesTo("(seq? nil)", false, env);
+		compilesTo("(seq? 3)", false, env);
+
+		compilesTo("(seq? (cons 1 []))", true, env);
+		compilesTo("(seq? (lazy-seq (cons 1 [])))", true, env);
+	});
+
+	it('Clojure-style coll?', function () {
+		compilesTo("(coll? '())", true, env);
+		compilesTo("(coll? '(1 2 3))", true, env);
+
+		compilesTo("(coll? [])", true, env);
+		compilesTo("(coll? [1 2 3])", true, env);
+
+		compilesTo("(coll? nil)", false, env);
+		compilesTo("(coll? 3)", false, env);
+
+		compilesTo("(coll? (cons 1 []))", true, env);
+		compilesTo("(coll? (lazy-seq (cons 1 [])))", true, env);
+	});
 });

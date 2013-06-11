@@ -10,6 +10,7 @@ var Keyword		= crisp.types.Keyword;
 var List		= crisp.types.List;
 var list		= crisp.types.list;
 var is_seq		= crisp.types.is_seq;
+var is_coll		= crisp.types.is_coll;
 var is_array	= crisp.types.is_array;
 var seq			= crisp.types.seq;
 var first		= crisp.types.first;
@@ -98,14 +99,16 @@ describe('Equality', function () {
 	it('Array Seq', function () {
 		var aseq = [1, 2, 3];
 
-		assert.deepEqual(true, is_seq(aseq));
+		assert.deepEqual(false, is_seq(aseq));
+		assert.deepEqual(true, is_coll(aseq));
 		assert.deepEqual(aseq, seq(aseq));
 		assert.deepEqual(1, first(aseq));
 		assert.deepEqual([2, 3], rest(aseq));
 		assert.deepEqual([2, 3], next(aseq));
 		assert.deepEqual(3, count(aseq));
 
-		assert.deepEqual(true, is_seq(Array.EMPTY));
+		assert.deepEqual(false, is_seq(Array.EMPTY));
+		assert.deepEqual(true, is_coll(Array.EMPTY));
 		assert.deepEqual(undefined, seq(Array.EMPTY));
 		assert.deepEqual(undefined, first(Array.EMPTY));
 		assert.deepEqual(List.EMPTY, rest(Array.EMPTY));
@@ -113,23 +116,6 @@ describe('Equality', function () {
 		assert.deepEqual(0, count(Array.EMPTY));
 	});
 
-	it('Array Seq', function () {
-		var aseq = [1, 2, 3];
-
-		assert.deepEqual(true, is_seq(aseq));
-		assert.deepEqual(aseq, seq(aseq));
-		assert.deepEqual(1, first(aseq));
-		assert.deepEqual([2, 3], rest(aseq));
-		assert.deepEqual([2, 3], next(aseq));
-		assert.deepEqual(3, count(aseq));
-
-		assert.deepEqual(true, is_seq(Array.EMPTY));
-		assert.deepEqual(undefined, seq(Array.EMPTY));
-		assert.deepEqual(undefined, first(Array.EMPTY));
-		assert.deepEqual(List.EMPTY, rest(Array.EMPTY));
-		assert.deepEqual(undefined, next(Array.EMPTY));
-		assert.deepEqual(0, count(Array.EMPTY));
-	});
 
 	it('Cons Seq', function () {
 		var aseq = new Cons(1, new List([2, 3]));
@@ -171,20 +157,23 @@ describe('Equality', function () {
 	});
 
 	it('Splice', function () {
-		assertEq(
-			splice(
-				new List([1, 2, 3]),
-				new Cons(4, new Cons(5, List.EMPTY))
-			),
-			new List([1, 2, 3, 4, 5])
+		var asplice;
+
+		asplice = splice(
+			new List([1, 2, 3]),
+			new Cons(4, new Cons(5, List.EMPTY))
 		);
-		assertEq(
-			splice(
-				[1, 2, 3],
-				new Cons(4, new Cons(5, List.EMPTY))
-			),
-			new List([1, 2, 3, 4, 5])
+		assertEq(asplice, new List([1, 2, 3, 4, 5]));
+		assert.deepEqual(true, is_seq(asplice));
+		assert.deepEqual(true, is_coll(asplice));
+
+		asplice = splice(
+			[1, 2, 3],
+			new Cons(4, new Cons(5, List.EMPTY))
 		);
+		assertEq(asplice, new List([1, 2, 3, 4, 5]));
+		assert.deepEqual(true, is_seq(asplice));
+		assert.deepEqual(true, is_coll(asplice));
 	});
 
 	it('Type tests.', function () {
