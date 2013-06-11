@@ -1,8 +1,10 @@
-/*global describe: true, it: true */
+/*global describe: true, it: true, beforeEach: true */
 "use strict";
 
+var vm			= require('vm');
 var assert		= require('assert');
 
+var compiler	= require('../build/compiler');
 var crisp		= require('../build/crisp');
 var Symbol		= crisp.types.Symbol;
 var Cons		= crisp.types.Cons;
@@ -20,12 +22,25 @@ var count		= crisp.types.count;
 var splice		= crisp.types.splice;
 var index_of	= crisp.types.index_of;
 var range		= crisp.core.range;
-var assertEq	= require('./testutils').assertEq;
+
+var testutils	= require('./testutils');
+var assertEq	= testutils.assertEq;
+var runIn		= testutils.runIn;
+var compilesTo	= testutils.compilesTo;
+var kompilesTo	= testutils.kompilesTo;
 
 var equal		= crisp.core.equal;
 var format		= crisp.core.format;
 
 describe('Equality', function () {
+	var env;
+
+	beforeEach(function () {
+		var types = require('../build/types');
+		env = vm.createContext(compiler.create_env());
+		vm.runInContext("crisp.types.patch_array_prototype(Array)", env);
+	});
+
 	it('Keyword Equality', function () {
 		assert.equal(true, equal(new Keyword("a"), new Keyword("a")));
 		assert.equal(false, equal(new Keyword("a"), new Keyword("b")));
@@ -180,5 +195,33 @@ describe('Equality', function () {
 		assert.equal(true, is_array([]));
 		assert.equal(false, is_array(list(1, 2, 3)));
 		assert.equal(false, is_array(undefined));
+	});
+
+	it('Clojure-style seq?', function () {
+		compilesTo("(seq? '())", true, env);
+		compilesTo("(seq? '(1 2 3))", true, env);
+
+		compilesTo("(seq? [])", false, env);
+		compilesTo("(seq? [1 2 3])", false, env);
+
+		compilesTo("(seq? nil)", false, env);
+		compilesTo("(seq? 3)", false, env);
+
+		compilesTo("(seq? (cons 1 []))", true, env);
+		compilesTo("(seq? (lazy-seq (cons 1 [])))", true, env);
+	});
+
+	it('Clojure-style coll?', function () {
+		compilesTo("(coll? '())", true, env);
+		compilesTo("(coll? '(1 2 3))", true, env);
+
+		compilesTo("(coll? [])", true, env);
+		compilesTo("(coll? [1 2 3])", true, env);
+
+		compilesTo("(coll? nil)", false, env);
+		compilesTo("(coll? 3)", false, env);
+
+		compilesTo("(coll? (cons 1 []))", true, env);
+		compilesTo("(coll? (lazy-seq (cons 1 [])))", true, env);
 	});
 });

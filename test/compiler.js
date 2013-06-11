@@ -1,11 +1,7 @@
-
 /*global describe: true, it: true, beforeEach: true */
 "use strict";
 
 var vm			= require('vm');
-var util		= require('util');
-var assert		= require('assert');
-var escodegen	= require('escodegen');
 
 var crisp		= require('../build/crisp');
 var Symbol		= crisp.types.Symbol;
@@ -15,44 +11,11 @@ var cons		= crisp.types.cons;
 
 var ast			= require('../build/ast');
 var compiler	= require('../build/compiler');
-var assertEq	= require('./testutils').assertEq;
-
-var runIn = function (source, debug, env) {
-	var compiled, compiled_ast, result;
-
-	compiled_ast = compiler.compile_string(source, env);
-
-	if (debug) {
-		console.log("\n==== COMPILED ====");
-		console.log(util.inspect(compiled_ast, {depth: null}));
-		console.log("====\n");
-	}
-
-	compiled = escodegen.generate(compiled_ast);
-
-	if (debug) {
-		console.log(compiled);
-		console.log("====\n");
-	}
-
-	try {
-		result = vm.runInContext(compiled, env);
-	} catch (e) {
-		throw e;
-	}
-
-	return result;
-};
-
-var compilesTo = function (source, expected, env, message) {
-	var result = runIn(source, false, env);
-	assertEq(result, expected, message);
-};
-
-var kompilesTo = function (source, expected, env, message) {
-	var result = runIn(source, true, env);
-	assertEq(result, expected, message);
-};
+var testutils	= require('./testutils');
+var assertEq	= testutils.assertEq;
+var runIn		= testutils.runIn;
+var compilesTo	= testutils.compilesTo;
+var kompilesTo	= testutils.kompilesTo;
 
 describe('compiler', function () {
 	var env;
@@ -103,7 +66,7 @@ describe('compiler', function () {
 		compilesTo("(* (+ 1 3) -3)", -12, env);
 	});
 
-	it('Lambda', function () {
+	it('fn', function () {
 		compilesTo("((fn [x] x) 5)", 5, env);
 		compilesTo("((fn [x y] (+ x y)) 5 9)", 14, env);
 		compilesTo("((fn [x y] (* x y)) 5 (+ 2 4))", 30, env);
@@ -322,31 +285,4 @@ describe('compiler', function () {
 		compilesTo("(map (fn [x] (* 2 x)) [1 2 3 4 5])", [2, 4, 6, 8, 10], env);
 	});
 
-	it('Clojure-style seq?', function () {
-		compilesTo("(seq? '())", true, env);
-		compilesTo("(seq? '(1 2 3))", true, env);
-
-		compilesTo("(seq? [])", false, env);
-		compilesTo("(seq? [1 2 3])", false, env);
-
-		compilesTo("(seq? nil)", false, env);
-		compilesTo("(seq? 3)", false, env);
-
-		compilesTo("(seq? (cons 1 []))", true, env);
-		compilesTo("(seq? (lazy-seq (cons 1 [])))", true, env);
-	});
-
-	it('Clojure-style coll?', function () {
-		compilesTo("(coll? '())", true, env);
-		compilesTo("(coll? '(1 2 3))", true, env);
-
-		compilesTo("(coll? [])", true, env);
-		compilesTo("(coll? [1 2 3])", true, env);
-
-		compilesTo("(coll? nil)", false, env);
-		compilesTo("(coll? 3)", false, env);
-
-		compilesTo("(coll? (cons 1 []))", true, env);
-		compilesTo("(coll? (lazy-seq (cons 1 [])))", true, env);
-	});
 });
