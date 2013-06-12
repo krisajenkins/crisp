@@ -3,8 +3,11 @@
 (def equal crisp.types.equal)
 (def seq crisp.types.seq)
 (def seq? crisp.types.seq?)
+(def array? crisp.types.array?)
 (def first crisp.types.first)
 (def second crisp.types.second)
+(def third crisp.types.third)
+(def fourth crisp.types.fourth)
 (def rest crisp.types.rest)
 (def next crisp.types.next)
 (def count crisp.types.count)
@@ -164,6 +167,10 @@
            (if s
              (cons (first s)
                    (take (dec n) (rest s))))))))
+
+(defn nth
+  [n coll]
+  (first (drop n coll)))
 
 (defn drop
   [n coll]

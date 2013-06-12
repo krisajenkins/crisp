@@ -8,6 +8,8 @@ var crisp		= require('./crisp');
 var ast			= require('./ast');
 var primitives	= require('./primitives').primitives;
 
+var take		= crisp.core.take;
+var nth			= crisp.core.nth;
 var Symbol		= crisp.types.Symbol;
 var Keyword		= crisp.types.Keyword;
 var List		= crisp.types.List;
@@ -268,10 +270,10 @@ compile.fn = function (form, env) {
 	vararg_point = index_of(new Symbol("&"), args);
 	if (vararg_point >= 0) {
 		assert.equal(vararg_point + 2, count(args), "Exactly one symbol must follow the & in a varargs declaration.");
-		compiled_args = into_array(map(function (f) { return compile(f, env); }, second(form).take(vararg_point)));
+		compiled_args = into_array(map(function (f) { return compile(f, env); }, take(vararg_point, second(form))));
 
 		compiled_vararg = [ast.encode.argument_splice(
-			compile(args.nth(vararg_point + 1), env),
+			compile(nth(vararg_point + 1, args), env),
 			ast.encode.literal(vararg_point)
 		)];
 	} else {
@@ -604,15 +606,19 @@ var create_env = function () {
 		defn: crisp.core.defn,
 		defmacro: crisp.core.defmacro,
 		doto: crisp.core.doto,
+		count: crisp.core.count,
 		map: crisp.core.map,
 		identity: crisp.core.identity,
 		when: crisp.core.when,
 		cond: crisp.core.cond,
+		apply: crisp.core.apply,
 		__GT_: crisp.core.__GT_,
 		__GT__GT_: crisp.core.__GT__GT_,
 		let_STAR_: crisp.core.let_STAR_,
 		crisp_do: crisp.core.crisp_do,
 		lazy_seq: crisp.core.lazy_seq,
+		filter: crisp.core.filter,
+		argcount: crisp.core.argcount,
 		first: crisp.types.first,
 		rest: crisp.types.rest,
 		next: crisp.types.next,
@@ -623,6 +629,7 @@ var create_env = function () {
 		into_array: crisp.types.into_array,
 		is_seq: crisp.types.is_seq,
 		is_coll: crisp.types.is_coll,
+		is_contains: crisp.core.is_contains,
 	};
 };
 exports.create_env = create_env;
