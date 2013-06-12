@@ -619,6 +619,7 @@ var create_env = function () {
 		lazy_seq: crisp.core.lazy_seq,
 		filter: crisp.core.filter,
 		argcount: crisp.core.argcount,
+		interleave: crisp.core.interleave,
 		first: crisp.types.first,
 		rest: crisp.types.rest,
 		next: crisp.types.next,
@@ -630,6 +631,7 @@ var create_env = function () {
 		is_seq: crisp.types.is_seq,
 		is_coll: crisp.types.is_coll,
 		is_contains: crisp.core.is_contains,
+		is_binds: crisp.core.is_binds,
 	};
 };
 exports.create_env = create_env;
