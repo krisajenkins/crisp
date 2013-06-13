@@ -151,5 +151,12 @@ describe('reader', function () {
 				"a\\(c\\)e"
 			])
 		);
+		assert.deepEqual(
+			read_string('#"\\s+\\w"').result,
+			new List([
+				new Symbol("RegExp."),
+				"\\s+\\w",
+			])
+		);
 	});
 });
