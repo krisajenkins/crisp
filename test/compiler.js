@@ -222,6 +222,11 @@ describe('compiler', function () {
 	it('Nested Macros', function () {
 	});
 
+	it('aget', function () {
+		runIn('(def person {:name "dave"})', false, env);
+		compilesTo('(aget person "name")', "dave", env);
+	});
+
 	it('aset', function () {
 		runIn("(def a 5)", false, env);
 		runIn("(aset a 10)", false, env);
